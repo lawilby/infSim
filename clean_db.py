@@ -1,8 +1,12 @@
-### Empty data from infSim.db ##
+### Empty data from infSim2.db ##
 
 import sqlite3
+import configparser
 
-conn = sqlite3.connect('infSim.db')
+config = configparser.ConfigParser()
+config.read('settings.ini')
+
+conn = sqlite3.connect(config['FILES']['DB'])
 
 c = conn.cursor()
 
