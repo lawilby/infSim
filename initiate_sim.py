@@ -23,60 +23,44 @@ parser.add_argument("threshold_proportion", help="proportion of neighbours which
 args = parser.parse_args()
 
 ################################################ target set
-
+start_time = time.time()
 ## random selection of the number of nodes set in input
 t = (int(args.target_size),)
 target_set = c.execute('SELECT nodeID FROM node ORDER BY RANDOM() LIMIT ?', t)
 nodeIDs_to_influence = [(node[0],) for node in target_set]
 
+print(time.time() - start_time)
 ## set influenced to true
 c.executemany('UPDATE node SET inf=1 WHERE nodeID=?', nodeIDs_to_influence)
-
+print(time.time() - start_time)
 ## update as active for round 1
 c.executemany('UPDATE activeNodes SET active=1 WHERE nodeID=? AND round=1', nodeIDs_to_influence)
-
+print(time.time() - start_time)
 conn.commit()
 ################################################ threshold
 
-start_time = time.time()
 
-c.execute('''SELECT nodeID FROM node 
-                        JOIN edges ON node.nodeID = edges.nodeID1 LIMIT 500000''')
 
-number_of_neighbours = c.fetchall()
+number_of_neighbours_query = conn.execute('''SELECT count(*), nodeID FROM node 
+                                            JOIN edges ON node.nodeID = edges.nodeID1 GROUP BY node.nodeID''')
 
-nodeID = number_of_neighbours[0][0]
-neighbour_count = 0
-thresholds = list()
-count = 0
+number_of_neighbours_query.arraysize = 500
 
-# TODO: make this better!! Count() is so slow in sqlite it seems so that is why I am doing it this way. 
-for row in number_of_neighbours:
+while True:
 
-    if row[0] == nodeID:
+    number_of_neighbours = number_of_neighbours_query.fetchmany()
 
-        neighbour_count +=1
+    if len(number_of_neighbours) != 0:
 
-    else:
+        thresholds = [(int(node[0]*float(args.threshold_proportion)), node[1]) for node in number_of_neighbours]
+        c.executemany('UPDATE node SET threshold=? WHERE nodeID=?', thresholds)
+        number_of_neighbours = number_of_neighbours_query.fetchmany()
 
-        thresholds.append((int(neighbour_count*float(args.threshold_proportion)), nodeID))
-        neighbour_count = 1
-        nodeID = row[0]
+    else: 
 
-    if count == len(number_of_neighbours)-1:
-
-        thresholds.append((int(neighbour_count*float(args.threshold_proportion)), nodeID))
-
-    count += 1
-
-print(thresholds)
-print(len(thresholds))
+        break
 
 print(time.time() - start_time)
 
-c.executemany('UPDATE node SET threshold=? WHERE nodeID =?', thresholds)
-
-print(time.time() -start_time)
-
-conn.commit()
+conn.commit
 conn.close()

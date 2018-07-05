@@ -18,10 +18,6 @@ c.execute('''CREATE TABLE IF NOT EXISTS edges
             (nodeID1 INTEGER, 
              nodeID2 INTEGER)''')
 
-'''
-edges cannot have a unique index (PK) on either column. Might want a multipart PK in future?
-'''
-c.execute('''CREATE INDEX IF NOT EXISTS nodeID1 ON edges (nodeID1)''')
 
 c.execute('''CREATE TABLE IF NOT EXISTS activeNodes
             (nodeID INTEGER PRIMARY KEY, 
