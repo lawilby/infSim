@@ -10,88 +10,90 @@ import argparse
 import configparser
 import time
 
-config = configparser.ConfigParser()
-config.read('settings.ini')
+def run_sim():
 
-conn = sqlite3.connect(config['FILES']['DB'])
+    config = configparser.ConfigParser()
+    config.read('settings.ini')
 
-c = conn.cursor()
+    conn = sqlite3.connect(config['FILES']['DB'])
 
-start_time = time.time()
-print('Starting simulation')
+    c = conn.cursor()
 
-for round in range(int(config['PARAMS']['rounds'])):
+    start_time = time.time()
+    print('Starting simulation')
 
-    # NOTE: round is actually the previous round. I.e. the first round is 0 which is executed as part of initialization.
-    print('Starting ROUND: ' + str(round+1) + ' ' + str(time.time()-start_time))
-    
-    ## Add nodes which are still active to round.
-    # NOTE: assumption that node becomes active and is active for lambda consecutive rounds before becoming inactive and never being active again.
-    nodes_still_active_query = conn.execute('''SELECT count(*), node.nodeID FROM node
-                                                JOIN activeNodes ON node.nodeID = activeNodes.nodeID
-                                                GROUP BY node.nodeID''')
+    for round in range(int(config['PARAMS']['rounds'])):
 
-    nodes_still_active_query.arraysize = 500
+        # NOTE: round is actually the previous round. I.e. the first round is 0 which is executed as part of initialization.
+        print('Starting ROUND: ' + str(round+1) + ' ' + str(time.time()-start_time))
+        
+        ## Add nodes which are still active to round.
+        # NOTE: assumption that node becomes active and is active for lambda consecutive rounds before becoming inactive and never being active again.
+        nodes_still_active_query = conn.execute('''SELECT count(*), node.nodeID FROM node
+                                                    JOIN activeNodes ON node.nodeID = activeNodes.nodeID
+                                                    GROUP BY node.nodeID''')
 
-    activeNodes_records = list()
+        nodes_still_active_query.arraysize = 500
 
-    while True:
+        activeNodes_records = list()
 
-        nodes_still_active = nodes_still_active_query.fetchmany()
+        while True:
 
-        if(len(nodes_still_active) != 0):
+            nodes_still_active = nodes_still_active_query.fetchmany()
 
-            for node in nodes_still_active:
+            if(len(nodes_still_active) != 0):
 
-                if node[0] < int(config['PARAMS']['lambda_val']):
+                for node in nodes_still_active:
 
-                    activeNodes_records.append((node[1], round + 1))
+                    if node[0] < int(config['PARAMS']['lambda_val']):
 
-        else:
+                        activeNodes_records.append((node[1], round + 1))
 
-            break
+            else:
 
-    print('Finished finding previously active nodes which are still active ' + str(time.time()-start_time))
+                break
 
-    ## Newly influenced and active
-    nodes_not_influenced_query = conn.execute('''SELECT count(*), node.nodeID, node.threshold FROM node
-                                                    JOIN edges ON node.nodeID = edges.nodeID1
-                                                    JOIN activeNodes ON edges.nodeID2 = activeNodes.nodeID
-                                                    WHERE node.inf=0 AND activeNodes.round=?
-                                                    GROUP BY node.nodeID''', (round,))
+        print('Finished finding previously active nodes which are still active ' + str(time.time()-start_time))
 
-    nodes_not_influenced_query.arraysize = 500
+        ## Newly influenced and active
+        nodes_not_influenced_query = conn.execute('''SELECT count(*), node.nodeID, node.threshold FROM node
+                                                        JOIN edges ON node.nodeID = edges.nodeID1
+                                                        JOIN activeNodes ON edges.nodeID2 = activeNodes.nodeID
+                                                        WHERE node.inf=0 AND activeNodes.round=?
+                                                        GROUP BY node.nodeID''', (round,))
 
-
-    infNodes_records = list()
-
-    while True:
-
-        nodes_not_influenced = nodes_not_influenced_query.fetchmany()
-
-        if(len(nodes_not_influenced) != 0):
-
-            ## For each node - check if should be influenced
-            for node in nodes_not_influenced:
-
-                if node[0] >= node[2]:
-
-                    activeNodes_records.append((node[1], round + 1))
-                    infNodes_records.append((node[1],))
-
-        else:
-
-            break
-
-    print('Finished finding nodes which will be influenced this round ' + str(time.time()-start_time))
-
-    c.executemany('''INSERT INTO activeNodes VALUES (?, ?)''', activeNodes_records)
-    c.executemany('''UPDATE node SET inf=1 WHERE nodeID=?''', infNodes_records)
-    conn.commit()
-
-    print('Updated DB for this round ' + str(time.time() - start_time))
-    print('Active nodes: ' + str(len(activeNodes_records)))
-    print('Newly influenced nodes: ' + str(len(infNodes_records)))
+        nodes_not_influenced_query.arraysize = 500
 
 
-conn.close()
+        infNodes_records = list()
+
+        while True:
+
+            nodes_not_influenced = nodes_not_influenced_query.fetchmany()
+
+            if(len(nodes_not_influenced) != 0):
+
+                ## For each node - check if should be influenced
+                for node in nodes_not_influenced:
+
+                    if node[0] >= node[2]:
+
+                        activeNodes_records.append((node[1], round + 1))
+                        infNodes_records.append((node[1],))
+
+            else:
+
+                break
+
+        print('Finished finding nodes which will be influenced this round ' + str(time.time()-start_time))
+
+        c.executemany('''INSERT INTO activeNodes VALUES (?, ?)''', activeNodes_records)
+        c.executemany('''UPDATE node SET inf=1 WHERE nodeID=?''', infNodes_records)
+        conn.commit()
+
+        print('Updated DB for this round ' + str(time.time() - start_time))
+        print('Active nodes: ' + str(len(activeNodes_records)))
+        print('Newly influenced nodes: ' + str(len(infNodes_records)))
+
+
+    conn.close()

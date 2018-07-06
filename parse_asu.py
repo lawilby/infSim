@@ -11,47 +11,50 @@ import sqlite3
 import configparser
 import time
 
-config = configparser.ConfigParser()
-config.read('settings.ini')
+def parse_data():
 
-conn = sqlite3.connect(config['FILES']['DB'])
+    config = configparser.ConfigParser()
+    config.read('settings.ini')
 
+    conn = sqlite3.connect(config['FILES']['DB'])
 
-c = conn.cursor()
+    print(config['FILES']['DB'])
 
-###################### nodes
+    c = conn.cursor()
 
-start_time = time.time()
-print('Starting parsing')
+    ###################### nodes
 
-with open(config['FILES']['nodes'], 'r') as node_ids:
+    start_time = time.time()
+    print('Starting parsing')
 
-    node_records = [(int(node_id.rstrip()), 1, 1, 0) for node_id in node_ids]
+    with open(config['FILES']['nodes'], 'r') as node_ids:
 
-
-c.executemany('INSERT INTO node VALUES (?, ?, ?, ?)', node_records)
-
-print('Finished inserting node records ' + str(time.time() - start_time))
+        node_records = [(int(node_id.rstrip()), 1, 1, 0) for node_id in node_ids]
 
 
-###################### edges
+    c.executemany('INSERT INTO node VALUES (?, ?, ?, ?)', node_records)
 
-with open(config['FILES']['edges'], 'r') as edge_pairs:
+    print('Finished inserting node records ' + str(time.time() - start_time))
 
-    edge_records = list()
 
-    for edge in edge_pairs:
+    ###################### edges
 
-        edge_records.append((int(edge.split(',')[0]), int(edge.split(',')[1])))
-        edge_records.append((int(edge.split(',')[1]), int(edge.split(',')[0])))
+    with open(config['FILES']['edges'], 'r') as edge_pairs:
 
-c.executemany('INSERT INTO edges VALUES (?, ?)', edge_records)
-print('Finished inserting edges ' + str(time.time() - start_time))
+        edge_records = list()
 
-c.execute('''CREATE INDEX IF NOT EXISTS nodeID1 ON edges (nodeID1)''')
-print('Finished creating index for edges table ' + str(time.time() - start_time))
+        for edge in edge_pairs:
 
-######################
+            edge_records.append((int(edge.split(',')[0]), int(edge.split(',')[1])))
+            edge_records.append((int(edge.split(',')[1]), int(edge.split(',')[0])))
 
-conn.commit()
-conn.close()
+    c.executemany('INSERT INTO edges VALUES (?, ?)', edge_records)
+    print('Finished inserting edges ' + str(time.time() - start_time))
+
+    c.execute('''CREATE INDEX IF NOT EXISTS nodeID1 ON edges (nodeID1)''')
+    print('Finished creating index for edges table ' + str(time.time() - start_time))
+
+    ######################
+
+    conn.commit()
+    conn.close()
