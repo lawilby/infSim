@@ -10,6 +10,7 @@ import sqlite3
 import argparse
 import time
 import configparser
+import math
 
 config = configparser.ConfigParser()
 config.read('settings.ini')
@@ -17,26 +18,34 @@ config.read('settings.ini')
 conn = sqlite3.connect(config['FILES']['DB'])
 c = conn.cursor()
 
-parser = argparse.ArgumentParser()
-parser.add_argument("target_size", help="number of nodes to activate initially") # TODO: Move this to a config file if adding incentives?
-parser.add_argument("threshold_proportion", help="proportion of neighbours which determine the node threshold")
-args = parser.parse_args()
 
 ################################################ target set
 start_time = time.time()
+print('Starting initialization')
+
 ## random selection of the number of nodes set in input
-t = (int(args.target_size),)
-target_set = c.execute('SELECT nodeID FROM node ORDER BY RANDOM() LIMIT ?', t)
+t = (str(config['PARAMS']['target_size']),)
+target_set = conn.execute('SELECT nodeID FROM node ORDER BY RANDOM() LIMIT ?', t).fetchall()
 nodeIDs_to_influence = [(node[0],) for node in target_set]
 
-print(time.time() - start_time)
+print('Finished selecting random set of nodes to influence ' + str(time.time() - start_time))
+
 ## set influenced to true
 c.executemany('UPDATE node SET inf=1 WHERE nodeID=?', nodeIDs_to_influence)
-print(time.time() - start_time)
-## update as active for round 1
-c.executemany('UPDATE activeNodes SET active=1 WHERE nodeID=? AND round=1', nodeIDs_to_influence)
-print(time.time() - start_time)
 conn.commit()
+
+print('Finished updating NODE table with influenced nodes ' + str(time.time() - start_time))
+
+
+## update as active for round 1
+
+active_nodes_records = [(node[0], 0) for node in target_set]
+c.executemany('INSERT INTO activeNodes VALUES (?, ?)', active_nodes_records)
+conn.commit()
+
+print('Finished inserting active nodes for first round ' + str(time.time() - start_time))
+
+
 ################################################ threshold
 
 
@@ -52,7 +61,7 @@ while True:
 
     if len(number_of_neighbours) != 0:
 
-        thresholds = [(int(node[0]*float(args.threshold_proportion)), node[1]) for node in number_of_neighbours]
+        thresholds = [(int(math.ceil(node[0]*float(config['PARAMS']['thresh_prop']))), node[1]) for node in number_of_neighbours]
         c.executemany('UPDATE node SET threshold=? WHERE nodeID=?', thresholds)
         number_of_neighbours = number_of_neighbours_query.fetchmany()
 
@@ -60,7 +69,10 @@ while True:
 
         break
 
-print(time.time() - start_time)
+conn.commit()
 
-conn.commit
+
+print('Finished setting thresholds ' + str(time.time() - start_time))
+
+
 conn.close()

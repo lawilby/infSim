@@ -22,14 +22,16 @@ c = conn.cursor()
 ###################### nodes
 
 start_time = time.time()
-print(time.time() - start_time)
+print('Starting parsing')
+
 with open(config['FILES']['nodes'], 'r') as node_ids:
 
     node_records = [(int(node_id.rstrip()), 1, 1, 0) for node_id in node_ids]
 
 
 c.executemany('INSERT INTO node VALUES (?, ?, ?, ?)', node_records)
-print(time.time() - start_time)
+
+print('Finished inserting node records ' + str(time.time() - start_time))
 
 
 ###################### edges
@@ -44,20 +46,10 @@ with open(config['FILES']['edges'], 'r') as edge_pairs:
         edge_records.append((int(edge.split(',')[1]), int(edge.split(',')[0])))
 
 c.executemany('INSERT INTO edges VALUES (?, ?)', edge_records)
-print(time.time() - start_time)
+print('Finished inserting edges ' + str(time.time() - start_time))
 
 c.execute('''CREATE INDEX IF NOT EXISTS nodeID1 ON edges (nodeID1)''')
-print(time.time() - start_time)
-
-###################### set up round 1 TODO: should this be here?
-
-with open(config['FILES']['nodes'], 'r') as node_ids:
-
-    activeNodes_records = [(int(node_id.rstrip()), 1, 0) for node_id in node_ids]
-
-c.executemany('INSERT INTO activeNodes VALUES (?, ?, ?)', activeNodes_records)
-print(time.time() - start_time)
-
+print('Finished creating index for edges table ' + str(time.time() - start_time))
 
 ######################
 
