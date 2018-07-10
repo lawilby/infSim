@@ -29,6 +29,13 @@ def select_target_set_random(directory_name):
     target_set = conn.execute('SELECT nodeID FROM node ORDER BY RANDOM() LIMIT ?', t).fetchall()
     nodeIDs_to_influence = [(node[0],) for node in target_set]
 
+    ## save to csv for future reference
+    with open(directory_name + "/target-set.csv", 'w') as f:
+
+        for node in target_set:
+
+            f.write(str(node[0]) + ',\n')
+
     print('Finished selecting random set of nodes to influence ' + str(round(time.time() - start_time, 2)))
 
     ## set influenced to true

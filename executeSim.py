@@ -10,11 +10,12 @@ import create_db
 import parse_asu
 import run_sim
 import initiate_sim
+import results
 
 start_time = time.time()
 print("START")
 
-# TODO add some details of execution into settings file -- this will probably have to be later
+# TODO add some details of execution into settings file -- this will probably have to be later -- i.e how to select target set and set thresholds
 config = configparser.ConfigParser()
 config.read('settings.ini')
 
@@ -37,8 +38,6 @@ except:
 
 settings.make_settings_file(directory_name) # TODO: probably want some sort of option of different ones to call for different paramaters ... or? edit file each time change?
 
-#### TODO: need to pass in directory for settings file to each one so it is reading correct settings
-
 ## Create db
 
 create_db.create_db(directory_name)
@@ -55,5 +54,9 @@ initiate_sim.set_thresholds_proportional(directory_name)
 ## run_sim -- need to allow for number of trials with same target set.
 
 run_sim.run_sim(directory_name)
+
+## display results
+
+results.display_results(directory_name)
 
 print('END ' + str(round(time.time() - start_time, 2)))

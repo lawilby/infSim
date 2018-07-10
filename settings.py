@@ -14,8 +14,8 @@ def make_settings_file(filepath):
 
     config['PARAMS'] = {
         'target_size': '100',
-        'thresh_prop': '.5',
-        'rounds'     : '20', #TODO: make this until no changes (i.e until halt)
+        'thresh_prop': '.2',
+        'rounds'     : '20', # NOTE: If the simulation is complete, simulation will halt prior to completing all rounds
         'lambda_val' : '1',
         'trials'     : '1'
     }
