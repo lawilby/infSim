@@ -1,10 +1,10 @@
 import sqlite3
 import configparser
 
-def create_db():
+def create_db(directory_name):
 
     config = configparser.ConfigParser()
-    config.read('settings.ini')
+    config.read(directory_name + '/settings.ini')
 
     conn = sqlite3.connect(config['FILES']['DB'])
 

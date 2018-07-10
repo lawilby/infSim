@@ -11,10 +11,10 @@ import sqlite3
 import configparser
 import time
 
-def parse_data():
+def parse_data(directory_name):
 
     config = configparser.ConfigParser()
-    config.read('settings.ini')
+    config.read(directory_name + '/settings.ini')
 
     conn = sqlite3.connect(config['FILES']['DB'])
 
@@ -34,7 +34,7 @@ def parse_data():
 
     c.executemany('INSERT INTO node VALUES (?, ?, ?, ?)', node_records)
 
-    print('Finished inserting node records ' + str(time.time() - start_time))
+    print('Finished inserting node records ' + str(round(time.time() - start_time, 2)))
 
 
     ###################### edges
@@ -49,10 +49,10 @@ def parse_data():
             edge_records.append((int(edge.split(',')[1]), int(edge.split(',')[0])))
 
     c.executemany('INSERT INTO edges VALUES (?, ?)', edge_records)
-    print('Finished inserting edges ' + str(time.time() - start_time))
+    print('Finished inserting edges ' + str(round(time.time() - start_time, 2)))
 
     c.execute('''CREATE INDEX IF NOT EXISTS nodeID1 ON edges (nodeID1)''')
-    print('Finished creating index for edges table ' + str(time.time() - start_time))
+    print('Finished creating index for edges table ' + str(round(time.time() - start_time, 2)))
 
     ######################
 

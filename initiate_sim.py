@@ -13,10 +13,10 @@ import configparser
 import math
 
 ################################################ target set
-def select_target_set_random():
+def select_target_set_random(directory_name):
 
     config = configparser.ConfigParser()
-    config.read('settings.ini')
+    config.read(directory_name + '/settings.ini')
 
     conn = sqlite3.connect(config['FILES']['DB'])
     c = conn.cursor()
@@ -29,13 +29,13 @@ def select_target_set_random():
     target_set = conn.execute('SELECT nodeID FROM node ORDER BY RANDOM() LIMIT ?', t).fetchall()
     nodeIDs_to_influence = [(node[0],) for node in target_set]
 
-    print('Finished selecting random set of nodes to influence ' + str(time.time() - start_time))
+    print('Finished selecting random set of nodes to influence ' + str(round(time.time() - start_time, 2)))
 
     ## set influenced to true
     c.executemany('UPDATE node SET inf=1 WHERE nodeID=?', nodeIDs_to_influence)
     conn.commit()
 
-    print('Finished updating NODE table with influenced nodes ' + str(time.time() - start_time))
+    print('Finished updating NODE table with influenced nodes ' + str(round(time.time() - start_time, 2)))
 
 
     ## update as active for round 1
@@ -44,13 +44,20 @@ def select_target_set_random():
     c.executemany('INSERT INTO activeNodes VALUES (?, ?)', active_nodes_records)
     conn.commit()
 
-    print('Finished inserting active nodes for first round ' + str(time.time() - start_time))
+    print('Finished inserting active nodes for first round ' + str(round(time.time() - start_time, 2)))
 
     conn.close()
 
 ################################################ threshold
-def set_thresholds_proportional():
+def set_thresholds_proportional(directory_name):
 
+    config = configparser.ConfigParser()
+    config.read(directory_name + '/settings.ini')
+
+    conn = sqlite3.connect(config['FILES']['DB'])
+    c = conn.cursor()
+
+    start_time = time.time()
 
     number_of_neighbours_query = conn.execute('''SELECT count(*), nodeID FROM node 
                                                 JOIN edges ON node.nodeID = edges.nodeID1 GROUP BY node.nodeID''')
@@ -74,6 +81,6 @@ def set_thresholds_proportional():
     conn.commit()
 
 
-    print('Finished setting thresholds ' + str(time.time() - start_time))
+    print('Finished setting thresholds ' + str(round(time.time() - start_time, 2)))
 
     conn.close()

@@ -15,7 +15,7 @@ def make_settings_file(filepath):
     config['PARAMS'] = {
         'target_size': '100',
         'thresh_prop': '.5',
-        'rounds'     : '100', #TODO: make this until no changes (i.e until halt)
+        'rounds'     : '20', #TODO: make this until no changes (i.e until halt)
         'lambda_val' : '1',
         'trials'     : '1'
     }
