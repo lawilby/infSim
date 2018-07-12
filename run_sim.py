@@ -71,8 +71,8 @@ def run_sim(directory_name):
                                                             JOIN edges ON node.nodeID = edges.nodeID1
                                                             JOIN activeNodes ON edges.nodeID2 = activeNodes.nodeID
                                                             WHERE node.inf=0 AND activeNodes.round=?
-                                                            GROUP BY node.nodeID''', (sim_round,))
-            # Can I order the query results so I can break out of loops below early?
+                                                            GROUP BY node.nodeID HAVING count(*) >= node.threshold''', (sim_round,))
+
             nodes_not_influenced_query.arraysize = 500
 
 
@@ -84,13 +84,14 @@ def run_sim(directory_name):
 
                 if(len(nodes_not_influenced) != 0):
 
-                    ## For each node - check if should be influenced
+                    # ## For each node - check if should be influenced
                     for node in nodes_not_influenced:
 
-                        if node[0] >= node[2]:
+                    #     if node[0] >= node[2]:
 
-                            activeNodes_records.append((node[1], sim_round + 1))
-                            infNodes_records.append((node[1],))
+                        activeNodes_records.append((node[1], sim_round + 1))
+                        infNodes_records.append((node[1],))
+
 
                 else:
 

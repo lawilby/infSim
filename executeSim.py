@@ -1,7 +1,3 @@
-import os
-import uuid
-import datetime
-import configparser
 import time
 
 # local files
@@ -12,51 +8,34 @@ import run_sim
 import initiate_sim
 import results
 
-start_time = time.time()
-print("START")
+def executeSim(directory_name, lambda_val, target_set_size, thresh_prop):
 
-# TODO add some details of execution into settings file -- this will probably have to be later -- i.e how to select target set and set thresholds
-config = configparser.ConfigParser()
-config.read('settings.ini')
+    start_time = time.time()
+    print("START")
 
-## Make a new directory
-date = datetime.datetime.now()
-directory_name = date.strftime("%d-%b-%Y:%H-%M-%S")
+    ## Call settings.py to make the settings.ini file in the directory
 
-print(directory_name)
+    settings.make_settings_file(directory_name, lambda_val, target_set_size, thresh_prop)
 
-try:
+    ## Create db
 
-    os.mkdir(directory_name)
+    create_db.create_db(directory_name)
 
-except:
+    ## Parse -- eventually make this an option in settings.ini
 
-    raise
-    # permissions, already exists etc. 
+    parse_asu.parse_data(directory_name)
 
-## Call settings.py to make the settings.ini file in the directory
+    ## initiate_sim -- eventually could have different options for selecting target set or thresholds in settings.ini
 
-settings.make_settings_file(directory_name) # TODO: probably want some sort of option of different ones to call for different paramaters ... or? edit file each time change?
+    initiate_sim.select_target_set_random(directory_name)
+    initiate_sim.set_thresholds_proportional(directory_name)
 
-## Create db
+    ## run_sim -- need to allow for number of trials with same target set.
 
-create_db.create_db(directory_name)
+    run_sim.run_sim(directory_name)
 
-## Parse -- eventually make this an option in settings.ini
+    ## display results
 
-parse_asu.parse_data(directory_name)
+    results.display_results(directory_name)
 
-## initiate_sim -- eventually could have different options for selecting target set or thresholds in settings.ini
-
-initiate_sim.select_target_set_random(directory_name)
-initiate_sim.set_thresholds_proportional(directory_name)
-
-## run_sim -- need to allow for number of trials with same target set.
-
-run_sim.run_sim(directory_name)
-
-## display results
-
-results.display_results(directory_name)
-
-print('END ' + str(round(time.time() - start_time, 2)))
+    print('END ' + str(round(time.time() - start_time, 2)))

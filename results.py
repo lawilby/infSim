@@ -23,8 +23,8 @@ def display_results(directory_name):
         f.write("Number of nodes influenced: " + str(number_influenced) + '\n')
 
         total_nodes = conn.execute('''SELECT count(*) FROM node''').fetchone()[0]
-        print("Number of nodes influenced: " + str(total_nodes))
-        f.write("Number of nodes influenced: " + str(total_nodes) + '\n')
+        print("Total number of nodes: " + str(total_nodes))
+        f.write("Total number of nodes: " + str(total_nodes) + '\n')
 
         percentage = float(number_influenced)*100/float(total_nodes)
         print("Percentage of nodes influenced: " + str(percentage))

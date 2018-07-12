@@ -1,7 +1,7 @@
 import configparser
 import uuid
 
-def make_settings_file(filepath):
+def make_settings_file(filepath, lambda_val, target_set_size, thresh_prop):
 
     config = configparser.ConfigParser()
 
@@ -13,10 +13,10 @@ def make_settings_file(filepath):
     }
 
     config['PARAMS'] = {
-        'target_size': '100',
-        'thresh_prop': '.2',
-        'rounds'     : '20', # NOTE: If the simulation is complete, simulation will halt prior to completing all rounds
-        'lambda_val' : '1',
+        'target_size': target_set_size,
+        'thresh_prop': thresh_prop,
+        'rounds'     : '50', # NOTE: If the simulation is complete, simulation will halt prior to completing all rounds
+        'lambda_val' : lambda_val,
         'trials'     : '1'
     }
 
