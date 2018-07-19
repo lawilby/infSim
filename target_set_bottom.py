@@ -4,11 +4,11 @@ import datetime
 
 import executeSim
 
-for val in range(10):
+for val in [500, 1000, 5000, 10000, 50000, 150000, 500000]:
 
     ## Make a new directory
     date = datetime.datetime.now()
-    directory_name = '/local-scratch/lw-data/vary-lambda/youTube/prop-5/' + date.strftime("%d-%b-%Y:%H-%M-%S")
+    directory_name = '/local-scratch/lw-data/target-set-bottom/' + date.strftime("%d-%b-%Y:%H-%M-%S")
 
     try:
 
@@ -19,4 +19,4 @@ for val in range(10):
         raise
         # permissions, already exists etc.
 
-    executeSim.executeSim(directory_name, val + 1, 100, .5)
+    executeSim.executeSim_target_low_thresh(directory_name, 3, val, .5)

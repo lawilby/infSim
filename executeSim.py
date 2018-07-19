@@ -7,6 +7,7 @@ import parse_asu
 import run_sim
 import initiate_sim
 import results
+# import plots
 
 def executeSim(directory_name, lambda_val, target_set_size, thresh_prop):
 
@@ -37,6 +38,8 @@ def executeSim(directory_name, lambda_val, target_set_size, thresh_prop):
     ## display results
 
     results.display_results(directory_name)
+
+    # plots.results_plot(directory_name)
 
     print('END ' + str(round(time.time() - start_time, 2)))
 

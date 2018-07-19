@@ -8,7 +8,7 @@ for val in range(10):
 
     ## Make a new directory
     date = datetime.datetime.now()
-    directory_name = 'vary-lambda/Hyves/prop-8/' + date.strftime("%d-%b-%Y:%H-%M-%S")
+    directory_name = '/local-scratch/lw-data/vary-lambda/youTube/prop-8/' + date.strftime("%d-%b-%Y:%H-%M-%S")
 
     try:
 

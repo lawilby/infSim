@@ -7,8 +7,8 @@ def make_settings_file(filepath, lambda_val, target_set_size, thresh_prop):
 
 
     config['FILES'] = {
-        'nodes': 'YouTube-dataset/data/nodes.csv',
-        'edges': 'YouTube-dataset/data/edges.csv',
+        'nodes': '/local-scratch/lw-data/YouTube-dataset/data/nodes.csv',
+        'edges': '/local-scratch/lw-data/YouTube-dataset/data/edges.csv',
         'DB'   : filepath + '/' + uuid.uuid4().hex + '.db'
     }
 
