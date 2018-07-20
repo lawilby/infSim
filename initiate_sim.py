@@ -55,6 +55,12 @@ def select_target_set_random(directory_name):
 
     conn.close()
 
+################################################ partial incentives
+def partial_incentives(directory_name):
+
+    pass
+
+
 ################################################ threshold
 def set_thresholds_proportional(directory_name):
 
