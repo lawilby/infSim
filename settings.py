@@ -1,7 +1,7 @@
 import configparser
 import uuid
 
-def make_settings_file(filepath, lambda_val, target_set_size, thresh_prop):
+def make_settings_file(filepath, lambda_val, target_set_size, thresh_prop, incentive=0):
 
     config = configparser.ConfigParser()
 
@@ -17,7 +17,8 @@ def make_settings_file(filepath, lambda_val, target_set_size, thresh_prop):
         'thresh_prop': thresh_prop,
         'rounds'     : '50', # NOTE: If the simulation is complete, simulation will halt prior to completing all rounds
         'lambda_val' : lambda_val,
-        'trials'     : '1'
+        'trials'     : '1',
+        'incentive'  : incentive
     }
 
     with open(filepath + '/settings.ini', 'w') as configfile:

@@ -4,7 +4,7 @@ import sqlite3
 import os
 
 
-directory_name = '/local-scratch/lw-data/vary-lambda/youTube/prop-6'
+directory_name = '/local-scratch/lw-data/vary-lambda/youTube/target-10'
 
 results_folders = os.listdir(directory_name)
 
@@ -33,7 +33,8 @@ print(percentages)
 plt.plot(percentages, lambda_vals, 'ro')
 plt.xlabel('Percentage Influenced')
 plt.ylabel('Time Window')
-plt.title('Threshold Proportion: 0.6')
+plt.title('Target Size: 10')
+plt.axis([0, 100, 0, 11])
 plt.savefig('{}/percentages_influenced.png'.format(directory_name))
 plt.cla()
 plt.clf()

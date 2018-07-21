@@ -58,7 +58,30 @@ def select_target_set_random(directory_name):
 ################################################ partial incentives
 def partial_incentives(directory_name):
 
-    pass
+    config = configparser.ConfigParser()
+    config.read(directory_name + '/settings.ini')
+
+    conn = sqlite3.connect(config['FILES']['DB'])
+    c = conn.cursor()
+
+    start_time = time.time()
+    print('Starting initialization')
+
+    ## random selection of the number of nodes set in input
+    t = (str(config['PARAMS']['target_size']),)
+    target_set = conn.execute('SELECT nodeID, threshold FROM node ORDER BY RANDOM() LIMIT ?', t).fetchall()
+    nodeIDs_to_incentivize = [(node[0], node[1] - config['PARAMS']['incentive']) for node in target_set]
+
+    ## save to csv for future reference
+    with open(directory_name + "/target-set.csv", 'w') as f:
+
+        for node in target_set:
+
+            f.write(str(node[0]) + ',\n')
+
+    print('Finished selecting random set of nodes to incentivize ' + str(round(time.time() - start_time, 2)))
+
+
 
 
 ################################################ threshold

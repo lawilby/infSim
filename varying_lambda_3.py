@@ -8,7 +8,7 @@ for val in range(10):
 
     ## Make a new directory
     date = datetime.datetime.now()
-    directory_name = '/local-scratch/lw-data/vary-lambda/youTube/prop-2/' + date.strftime("%d-%b-%Y:%H-%M-%S")
+    directory_name = '/local-scratch/lw-data/vary-lambda/youTube/target-10/' + date.strftime("%d-%b-%Y:%H-%M-%S")
 
     try:
 
@@ -19,4 +19,4 @@ for val in range(10):
         raise
         # permissions, already exists etc.
 
-    executeSim.executeSim(directory_name, val + 1, 100, .2)
+    executeSim.executeSim(directory_name, val + 1, 10, .5)
