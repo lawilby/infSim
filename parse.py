@@ -1,3 +1,7 @@
+import sqlite3
+import configparser
+import time
+
 ######################################
 ## Parse data from ASU datasets.    ##
 ##                                  ##
@@ -6,12 +10,7 @@
 ##  edges.csv - pairs of node ids   ##
 ##                                  ##
 ######################################
-
-import sqlite3
-import configparser
-import time
-
-def parse_data(directory_name):
+def parse_asu_data(directory_name):
 
     config = configparser.ConfigParser()
     config.read(directory_name + '/settings.ini')
@@ -29,10 +28,10 @@ def parse_data(directory_name):
 
     with open(config['FILES']['nodes'], 'r') as node_ids:
 
-        node_records = [(int(node_id.rstrip()), 1, 1, 0) for node_id in node_ids]
+        node_records = [(int(node_id.rstrip()), 1, 0) for node_id in node_ids]
 
 
-    c.executemany('INSERT INTO node VALUES (?, ?, ?, ?)', node_records)
+    c.executemany('INSERT INTO nodes VALUES (?, ?, ?)', node_records)
 
     print('Finished inserting node records ' + str(round(time.time() - start_time, 2)))
 
