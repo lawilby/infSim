@@ -1,138 +1,41 @@
 import time
 
 # local files
-import settings
-import create_db
-import parse_asu
-import run_sim
-import initiate_sim
+from infSim.settings import make_settings_file
+from infSim.db import create_db
+from infSim.parse import parse_asu_data
+from infSim.initiate import select_random_target_set
+from infSim.initiate import incentivize
+from infSim.sim import run_sim
 import results
 # import plots
 
-def executeSim(directory_name, lambda_val, target_set_size, thresh_prop):
+def execute_simulation(directory_name, params):
 
     start_time = time.time()
     print("START")
 
-    ## Call settings.py to make the settings.ini file in the directory
+    make_settings_file(directory_name, params)
 
-    settings.make_settings_file(directory_name, lambda_val, target_set_size, thresh_prop)
-
-    ## Create db
-
-    create_db.create_db(directory_name)
-
-    ## Parse -- eventually make this an option in settings.ini
-
-    parse_asu.parse_data(directory_name)
-
-    ## initiate_sim -- eventually could have different options for selecting target set or thresholds in settings.ini
-
-    initiate_sim.select_target_set_random(directory_name)
-    initiate_sim.set_thresholds_proportional(directory_name)
-
-    ## run_sim -- need to allow for number of trials with same target set.
-
-    run_sim.run_sim(directory_name)
-
-    ## display results
-
-    results.display_results(directory_name)
-
-    # plots.results_plot(directory_name)
-
-    print('END ' + str(round(time.time() - start_time, 2)))
-
-def executeSim_target_high_thresh(directory_name, lambda_val, target_set_size, thresh_prop):
-
-    start_time = time.time()
-    print("START")
-
-    ## Call settings.py to make the settings.ini file in the directory
-
-    settings.make_settings_file(directory_name, lambda_val, target_set_size, thresh_prop)
-
-    ## Create db
-
-    create_db.create_db(directory_name)
-
-    ## Parse -- eventually make this an option in settings.ini
-
-    parse_asu.parse_data(directory_name)
-
-    ## initiate_sim -- eventually could have different options for selecting target set or thresholds in settings.ini
-
-    initiate_sim.set_thresholds_proportional(directory_name)
-    initiate_sim.select_target_set_top(directory_name)
-
-    ## run_sim -- need to allow for number of trials with same target set.
-
-    run_sim.run_sim(directory_name)
-
-    ## display results
-
-    results.display_results(directory_name)
-
-    print('END ' + str(round(time.time() - start_time, 2)))
-
-def executeSim_target_low_thresh(directory_name, lambda_val, target_set_size, thresh_prop):
-
-    start_time = time.time()
-    print("START")
-
-    ## Call settings.py to make the settings.ini file in the directory
-
-    settings.make_settings_file(directory_name, lambda_val, target_set_size, thresh_prop)
-
-    ## Create db
-
-    create_db.create_db(directory_name)
-
-    ## Parse -- eventually make this an option in settings.ini
-
-    parse_asu.parse_data(directory_name)
-
-    ## initiate_sim -- eventually could have different options for selecting target set or thresholds in settings.ini
-
-    initiate_sim.set_thresholds_proportional(directory_name)
-    initiate_sim.select_target_set_bottom(directory_name)
-
-    ## run_sim -- need to allow for number of trials with same target set.
-
-    run_sim.run_sim(directory_name)
-
-    ## display results
-
-    results.display_results(directory_name)
-
-    print('END ' + str(round(time.time() - start_time, 2)))
-
-def executeSim_Partial_Incentives(directory_name, lambda_val, target_set_size, thresh_prop, incentive):
-
-    start_time = time.time()
-    print("START")
-
-    ## Call settings.py to make the settings.ini file in the directory
-
-    settings.make_settings_file(directory_name, lambda_val, target_set_size, thresh_prop, incentive)
-
-    ## Create db
-
-    create_db.create_db(directory_name)
-
-    ## Parse -- eventually make this an option in settings.ini
-
-    parse_asu.parse_data(directory_name)
-
-    ## initiate_sim -- eventually could have different options for selecting target set or thresholds in settings.ini
+    results_config  = configparser.ConfigParser()
+    settings_config = configparser.ConfigParser() 
+    settings_config.read(directory_name + '/settings.ini')
+    conn = sqlite3.connect(settings_config['FILES']['DB'])
+    conn.row_factory = sqlite3.Row
     
-    initiate_sim.set_thresholds_proportional(directory_name)
-    initiate_sim.partial_incentives(directory_name)
+    create_db(conn) 
 
+    parse_asu_data(settings_config, conn)
 
-    ## run_sim -- need to allow for number of trials with same target set.
+    if params['target_set_selection'] == 'random':
 
-    run_sim.run_sim(directory_name)
+        target_set = select_random_target_set(settings_config, conn)
+
+    results_config['RESULTS'] = dict()
+    
+    incentivize(settings_config, results_config, conn, target_set)
+
+    run_sim(settings_config, conn)
 
     ## display results
 
@@ -140,4 +43,8 @@ def executeSim_Partial_Incentives(directory_name, lambda_val, target_set_size, t
 
     # plots.results_plot(directory_name)
 
-    print('END ' + str(round(time.time() - start_time, 2)))
+    print('END {}'.format(str(round(time.time() - start_time, 2))))
+
+    conn.close()
+
+    # TODO: cleanup files

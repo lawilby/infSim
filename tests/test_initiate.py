@@ -14,7 +14,8 @@ def test_thresholds():
 
     directory_name = os.getcwd()
     # Paramaters except threshold proportion don't matter because test doesn't use them
-    make_settings_file(directory_name, thresh_prop=0.5)
+    params=dict(thresh_prop=0.5)
+    make_settings_file(directory_name, params)
 
     config = configparser.ConfigParser()
     config.read(directory_name + '/settings.ini')
@@ -85,7 +86,8 @@ def test_incentivize():
     ## TEST SETUP ##
 
     directory_name = os.getcwd()
-    make_settings_file(directory_name, thresh_prop=1, incentive_prop=0.2)
+    params = dict(thresh_prop=1, incentive_prop=0.2)
+    make_settings_file(directory_name, params)
 
     settings_config = configparser.ConfigParser()
     results_config = configparser.ConfigParser()
@@ -152,9 +154,9 @@ def test_incentivize():
 
             pytest.fail('Node 1 should not be active. It was only partially incentivized')
 
-        if node['nodeID'] == 4:
+        if node['nodeID'] == 2:
 
-            pytest.fail(reason='Node 2 should not be active. It was not incentivized')
+            pytest.fail('Node 2 should not be active. It was not incentivized')
 
         assert node['round'] == 0
 
@@ -178,7 +180,8 @@ def test_select_random_target_set():
     ## TEST SETUP ##
 
     directory_name = os.getcwd()
-    make_settings_file(directory_name, target_set_prop=0.1)
+    params = dict( target_set_prop = 0.1)
+    make_settings_file(directory_name, params)
 
     settings_config = configparser.ConfigParser()
     settings_config.read(directory_name + '/settings.ini')

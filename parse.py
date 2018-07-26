@@ -10,18 +10,10 @@ import time
 ##  edges.csv - pairs of node ids   ##
 ##                                  ##
 ######################################
-def parse_asu_data(directory_name):
+def parse_asu_data(config, conn):
 
-    config = configparser.ConfigParser()
-    config.read(directory_name + '/settings.ini')
 
-    conn = sqlite3.connect(config['FILES']['DB'])
-
-    print(config['FILES']['DB'])
-
-    c = conn.cursor()
-
-    ###################### nodes
+    ###################### NODES
 
     start_time = time.time()
     print('Starting parsing')
@@ -31,12 +23,12 @@ def parse_asu_data(directory_name):
         node_records = [(int(node_id.rstrip()), 1, 0) for node_id in node_ids]
 
 
-    c.executemany('INSERT INTO nodes VALUES (?, ?, ?)', node_records)
+    conn.executemany('INSERT INTO nodes VALUES (?, ?, ?)', node_records)
 
-    print('Finished inserting node records ' + str(round(time.time() - start_time, 2)))
+    print('Finished inserting node records {}'.format(str(round(time.time() - start_time, 2))))
 
 
-    ###################### edges
+    ###################### EDGES
 
     with open(config['FILES']['edges'], 'r') as edge_pairs:
 
@@ -47,13 +39,12 @@ def parse_asu_data(directory_name):
             edge_records.append((int(edge.split(',')[0]), int(edge.split(',')[1])))
             edge_records.append((int(edge.split(',')[1]), int(edge.split(',')[0])))
 
-    c.executemany('INSERT INTO edges VALUES (?, ?)', edge_records)
+    conn.executemany('INSERT INTO edges VALUES (?, ?)', edge_records)
     print('Finished inserting edges ' + str(round(time.time() - start_time, 2)))
 
-    c.execute('''CREATE INDEX IF NOT EXISTS nodeID1 ON edges (nodeID1)''')
-    print('Finished creating index for edges table ' + str(round(time.time() - start_time, 2)))
+    conn.execute('''CREATE INDEX IF NOT EXISTS nodeID1 ON edges (nodeID1)''')
+    print('Finished creating index for edges table {}'.format(str(round(time.time() - start_time, 2))))
 
     ######################
 
     conn.commit()
-    conn.close()
