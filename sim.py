@@ -15,16 +15,19 @@ def run_sim(config, conn):
     start_time = time.time()
     print('Starting Simulation')
 
-    with open(config['FILES']['directory'] + "/simulation-details.txt", "w") as f: # record details of sim to file for reference
+    with open(config['FILES']['directory'] + "/simulation-details.csv", "a") as f: # record details of sim to file for reference
 
-        for sim_round in range(int(config['PARAMS']['rounds'])):
+        ''' NOTE: Updating active and influenced nodes for NEXT round based on previous round. 
+        i.e. Nodes in round 0 have already been added as active and influenced for round 0. On first run, nodes still active for round 1 are added, 
+        and influenced nodes for round 1 are updated as influenced based on nodes active in round 0 and are also added to the active nodes for round 1. 
+        '''
+        for sim_round in range(1,int(config['PARAMS']['rounds'])+1):
 
-            # NOTE: round is actually the previous round. I.e. the first round is 0 which is executed as part of initialization.
-            round_string = 'Starting ROUND: {}  {}'.format(str(sim_round+1), str(round(time.time()-start_time, 2)))
+            round_string = 'Starting ROUND: {}  {}'.format(str(sim_round), str(round(time.time()-start_time, 2)))
             print(round_string)
-            f.write(round_string)
 
-            ## Add nodes which are still active to round.
+
+            ## Add nodes which are still active to current round.
             # NOTE: assumption that node becomes active and is active for lambda consecutive rounds before becoming inactive and never being active again.
             nodes_still_active_query = conn.execute('''SELECT count(*) as num_rounds_active, nodes.nodeID FROM nodes
                                                         JOIN activeNodes ON nodes.nodeID = activeNodes.nodeID
@@ -32,7 +35,6 @@ def run_sim(config, conn):
                                                         ORDER BY count(*) ASC''')
 
             nodes_still_active_query.arraysize = 500
-
             activeNodes_records = list()
 
             while True:
@@ -45,7 +47,7 @@ def run_sim(config, conn):
 
                         if node['num_rounds_active'] < int(config['PARAMS']['lambda_val']):
 
-                            activeNodes_records.append((node['nodeID'], sim_round + 1))
+                            activeNodes_records.append((node['nodeID'], sim_round))
 
                         else:
 
@@ -56,19 +58,19 @@ def run_sim(config, conn):
                 else:
 
                     break
-
+            
             print('Finished finding previously active nodes which are still active ' + str(round(time.time()-start_time, 2)))
 
-            ## Newly influenced and active
+            ''' Look at nodes which have not been influenced. 
+                If they have >= threshold neighbours which are active this round, then they become influenced and active. 
+            '''
             nodes_not_influenced_query = conn.execute('''SELECT nodes.nodeID, nodes.threshold FROM nodes
                                                             JOIN edges ON nodes.nodeID = edges.nodeID1
                                                             JOIN activeNodes ON edges.nodeID2 = activeNodes.nodeID
                                                             WHERE nodes.inf=0 AND activeNodes.round=?
-                                                            GROUP BY nodes.nodeID HAVING count(*) >= nodes.threshold''', (sim_round,))
+                                                            GROUP BY nodes.nodeID HAVING count(*) >= nodes.threshold''', (sim_round-1,))
 
             nodes_not_influenced_query.arraysize = 500
-
-
             infNodes_records = list()
 
             while True:
@@ -80,7 +82,7 @@ def run_sim(config, conn):
                     # ## For each node - check if should be influenced
                     for node in nodes_not_influenced:
 
-                        activeNodes_records.append((node['nodeID'], sim_round + 1))
+                        activeNodes_records.append((node['nodeID'], sim_round))
                         infNodes_records.append((node['nodeID'],))
 
                 else:
@@ -93,12 +95,15 @@ def run_sim(config, conn):
             conn.executemany('''UPDATE nodes SET inf=1 WHERE nodeID=?''', infNodes_records)
             conn.commit()
 
-            print('Updated DB for this round ' + str(round(time.time() - start_time, 2)))
-            print('Active nodes: ' + str(len(activeNodes_records)))
-            print('Newly influenced nodes: ' + str(len(infNodes_records)))
-            f.write('Active nodes: ' + str(len(activeNodes_records)) + '\n')
-            f.write('Newly influenced nodes: ' + str(len(infNodes_records)) + '\n')
+            print('Updated DB for this round {}\nActive nodes: {}\nNewly influenced nodes: {}'.format(round(time.time() - start_time, 2), 
+                                                                            len(activeNodes_records), 
+                                                                            len(infNodes_records), ))
+            
+            f.write('{},{},{}\n'.format(sim_round, len(activeNodes_records), len(infNodes_records)))
 
             if len(infNodes_records) == 0:
-                #No changes means that all node that can be influenced have already been influenced
+                ''' No changes means that all node that can be influenced have already been influenced.
+                    Set of active nodes for next run will be the same as the set for the round just checked, so no further 
+                    rounds need to be executed.
+                '''
                 break

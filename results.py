@@ -1,19 +1,13 @@
 import sqlite3
 import configparser
+import Decimal from decimal
 
-def display_results(directory_name):
+def record_results(settings_config, results_config, conn, results_db_conn):
 
-    settings_config = configparser.ConfigParser()
-    settings_config.read(directory_name + '/settings.ini')
+    ########### CALCULATIONS ###########
 
-    conn = sqlite3.connect(settings_config['FILES']['DB'])
-
-    # number of rounds
-
-    max_round = conn.execute('''SELECT max(round) FROM activeNodes''').fetchone()[0]
-    print("Number of rounds to finish: " + str(max_round + 1))
-
-    # percentage influenced
+    rounds = conn.execute('''SELECT max(round) FROM activeNodes''').fetchone()[0] + 1
+    print("Number of rounds to finish: " + str(rounds))
 
     number_influenced = conn.execute('''SELECT count(*) FROM node WHERE inf=1''').fetchone()[0]
     print("Number of nodes influenced: " + str(number_influenced))
@@ -21,17 +15,31 @@ def display_results(directory_name):
     total_nodes = conn.execute('''SELECT count(*) FROM node''').fetchone()[0]
     print("Total number of nodes: " + str(total_nodes))
 
-    percentage = float(number_influenced)*100/float(total_nodes)
+    percentage = float(Decimal.from_float(number_influenced)*Decimal.from_float(100.0)/Decimal.from_float(total_nodes))
     print("Percentage of nodes influenced: " + str(percentage))
 
+    ########### RESULTS CONFIG #########
+
     results_config = configparser.ConfigParser()
-    results_config['RESULTS'] = {
-        'rounds'                : str(max_round + 1),
+    results_config['RESULTS'].update({
+        'rounds'                : str(rounds),
         'nodes_influenced'      : str(number_influenced),
         'total_nodes'           : str(total_nodes),
         'percentage_influenced' : str(percentage)
-    }
+    })
 
-    with open(directory_name + '/results.ini', 'w') as configfile:
+    ######## RESULTS DB ##########
 
-        results_config.write(configfile)
+    results_row = ( settings_config['dataset'],
+                    settings_config['target_set_prop'],
+                    settings_config['target_set_sel'],
+                    settings_config['thresh_prop'],
+                    settings_config['lambda_val'],
+                    settings_config['incentive_prop'],
+                    settings_config['decay'],
+                    rounds, 
+                    percentage, 
+                    results_config['RESULTS']['incentive_total'])
+
+    results_db_conn.execute('INSERT INTO results VALUES (?,?,?,?,?,?,?,?,?,?)', results_row)
+    results_db_conn.commit()

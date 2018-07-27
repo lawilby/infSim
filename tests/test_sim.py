@@ -46,7 +46,7 @@ def test_run_sim():
     directory_name = os.getcwd()
     
     params = dict(lambda_val=1)
-    make_settings_file(directory_name, params)
+    make_settings_file(directory_name, directory_name, params)
 
     config = configparser.ConfigParser()
     config.read(directory_name + '/settings.ini')
@@ -131,7 +131,7 @@ def test_run_sim():
     directory_name = os.getcwd()
     
     params = dict(lambda_val=2)
-    make_settings_file(directory_name, params)
+    make_settings_file(directory_name, directory_name, params)
 
     config = configparser.ConfigParser()
     config.read(directory_name + '/settings.ini')
@@ -209,7 +209,7 @@ def test_run_sim():
     conn.close()
     os.remove(config['FILES']['DB'])
     os.remove('settings.ini')
-    os.remove('simulation-details.txt')
+    os.remove('simulation-details.csv')
 
 
 

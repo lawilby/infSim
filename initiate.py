@@ -63,33 +63,37 @@ def incentivize(settings_config, results_config, conn, target_set):
     nodes_to_incentivize = list()
     incentive_total = 0
 
-    with open("{}/target-set.csv".format(settings_config['FILES']['directory']), 'w') as f:
-        
+    with open("{}/target-set.csv".format(settings_config['FILES']['directory']), 'w') as target_file, open("{}/simulation-details.csv".format(settings_config['FILES']['directory']), "w") as details_file:
+            
         for node in target_set:
 
-            f.write('{},{}\n'.format(str(node['nodeID']), str(node['threshold'])))
+            target_file.write('{},{}\n'.format(node['nodeID'], node['threshold']))
             new_threshold_value = int(math.floor(float(Decimal.from_float(node['threshold'])*Decimal(settings_config['PARAMS']['incentive_prop']))))
             incentive_total += node['threshold'] - new_threshold_value
             nodes_to_incentivize.append((new_threshold_value, node['nodeID']))
 
-    results_config['RESULTS']['incentive_total'] = str(incentive_total)
-    
-    conn.executemany('''UPDATE nodes SET threshold=? WHERE nodeID=?''', nodes_to_incentivize)
+        results_config['RESULTS']['incentive_total'] = str(incentive_total)
+        
+        conn.executemany('''UPDATE nodes SET threshold=? WHERE nodeID=?''', nodes_to_incentivize)
 
-    ####### Activate nodes which now have threshold 0
-    influenced_nodes = conn.execute('SELECT nodeID FROM nodes Where threshold=0').fetchall()
+        ####### Activate nodes which now have threshold 0
+        influenced_nodes = conn.execute('SELECT nodeID FROM nodes Where threshold=0').fetchall()
 
-    nodes_to_influence = [(node['nodeID'],) for node in influenced_nodes]
+        nodes_to_influence = [(node['nodeID'],) for node in influenced_nodes]
 
-    conn.executemany('''UPDATE nodes SET inf=1 WHERE nodeID=?''', nodes_to_influence)
 
-    print('Finished updating NODES table with influenced nodes ' + str(round(time.time() - start_time, 2)))
+        conn.executemany('''UPDATE nodes SET inf=1 WHERE nodeID=?''', nodes_to_influence)
 
-    active_nodes_records = [(node['nodeID'], 0) for node in influenced_nodes]
-    conn.executemany('INSERT INTO activeNodes VALUES (?, ?)', active_nodes_records)
-    conn.commit()
+        print('Finished updating NODES table with influenced nodes ' + str(round(time.time() - start_time, 2)))
 
-    print('Finished inserting active nodes for first round ' + str(round(time.time() - start_time, 2)))
+        active_nodes_records = [(node['nodeID'], 0) for node in influenced_nodes]
+        conn.executemany('INSERT INTO activeNodes VALUES (?, ?)', active_nodes_records)
+        
+        details_file.write('0,{},{}\n'.format(len(active_nodes_records), len(nodes_to_influence))) 
+        
+        conn.commit()
+
+        print('Finished inserting active nodes for first round ' + str(round(time.time() - start_time, 2)))
 
 
 

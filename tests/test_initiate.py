@@ -15,7 +15,7 @@ def test_thresholds():
     directory_name = os.getcwd()
     # Paramaters except threshold proportion don't matter because test doesn't use them
     params=dict(thresh_prop=0.5)
-    make_settings_file(directory_name, params)
+    make_settings_file(directory_name, directory_name, params)
 
     config = configparser.ConfigParser()
     config.read(directory_name + '/settings.ini')
@@ -87,7 +87,7 @@ def test_incentivize():
 
     directory_name = os.getcwd()
     params = dict(thresh_prop=1, incentive_prop=0.2)
-    make_settings_file(directory_name, params)
+    make_settings_file(directory_name, directory_name, params)
 
     settings_config = configparser.ConfigParser()
     results_config = configparser.ConfigParser()
@@ -181,7 +181,7 @@ def test_select_random_target_set():
 
     directory_name = os.getcwd()
     params = dict( target_set_prop = 0.1)
-    make_settings_file(directory_name, params)
+    make_settings_file(directory_name, directory_name, params)
 
     settings_config = configparser.ConfigParser()
     settings_config.read(directory_name + '/settings.ini')
