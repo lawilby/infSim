@@ -198,6 +198,11 @@ def test_select_random_target_set():
 
     test_random_target_set = select_random_target_set(settings_config, conn).fetchall()
 
+    dummy_node_ids = range(1,10001)
+    for i in test_random_target_set:
+
+        assert i['nodeID'] in dummy_node_ids
+
     assert len(test_random_target_set) == 1000
     
     conn.close()

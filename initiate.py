@@ -13,7 +13,7 @@ import configparser
 import math
 from decimal import Decimal
 from random import seed
-from random import randint
+from random import sample
 
 
 ################################################ Set Node Thresholds
@@ -113,11 +113,7 @@ def select_random_target_set(config, conn):
 
         raise Exception()
 
-    while len(random_nodes) != target_set_size:
-
-        random_int = randint(1,number_of_nodes)
-        if random_int not in random_nodes:
-            random_nodes.append(random_int)
+    random_nodes = sample(range(1,number_of_nodes+1), k=target_set_size)
 
     query_string = 'SELECT * FROM nodes WHERE rowid in ({seq})'.format(seq=','.join(['?']*target_set_size))
     target_set = conn.execute(query_string, random_nodes)
