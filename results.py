@@ -15,7 +15,7 @@ def record_results(settings_config, results_config, conn, results_db_conn):
     total_nodes = conn.execute('''SELECT count(*) FROM node''').fetchone()[0]
     print("Total number of nodes: " + str(total_nodes))
 
-    percentage = float(Decimal.from_float(number_influenced)*Decimal.from_float(100.0)/Decimal.from_float(total_nodes))
+    percentage = float(Decimal(number_influenced)*Decimal('100')/Decimal(total_nodes))
     print("Percentage of nodes influenced: " + str(percentage))
 
     ########### RESULTS CONFIG #########

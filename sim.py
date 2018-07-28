@@ -9,6 +9,7 @@ import sqlite3
 import argparse
 import configparser
 import time
+from decimal import Decimal
 
 def run_sim(config, conn):
 
@@ -47,7 +48,15 @@ def run_sim(config, conn):
 
                         if node['num_rounds_active'] < int(config['PARAMS']['lambda_val']):
 
-                            activeNodes_records.append((node['nodeID'], sim_round))
+                            if int(config['PARAMS']['decay']):
+
+                                power = float(Decimal('1') - Decimal('1')/Decimal(config['PARAMS']['lambda_val'])*Decimal(node['num_rounds_active']))
+
+                            else:
+
+                                power = 1
+
+                            activeNodes_records.append((node['nodeID'], sim_round, power))
 
                         else:
 
@@ -68,7 +77,7 @@ def run_sim(config, conn):
                                                             JOIN edges ON nodes.nodeID = edges.nodeID1
                                                             JOIN activeNodes ON edges.nodeID2 = activeNodes.nodeID
                                                             WHERE nodes.inf=0 AND activeNodes.round=?
-                                                            GROUP BY nodes.nodeID HAVING count(*) >= nodes.threshold''', (sim_round-1,))
+                                                            GROUP BY nodes.nodeID HAVING sum(activeNodes.power) >= nodes.threshold''', (sim_round-1,))
 
             nodes_not_influenced_query.arraysize = 500
             infNodes_records = list()
@@ -82,7 +91,7 @@ def run_sim(config, conn):
                     # ## For each node - check if should be influenced
                     for node in nodes_not_influenced:
 
-                        activeNodes_records.append((node['nodeID'], sim_round))
+                        activeNodes_records.append((node['nodeID'], sim_round, 1))
                         infNodes_records.append((node['nodeID'],))
 
                 else:
@@ -91,7 +100,7 @@ def run_sim(config, conn):
 
             print('Finished finding nodes which will be influenced this round ' + str(round(time.time()-start_time, 2)))
 
-            conn.executemany('''INSERT INTO activeNodes VALUES (?, ?)''', activeNodes_records)
+            conn.executemany('''INSERT INTO activeNodes VALUES (?, ?, ?)''', activeNodes_records)
             conn.executemany('''UPDATE nodes SET inf=1 WHERE nodeID=?''', infNodes_records)
             conn.commit()
 

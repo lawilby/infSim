@@ -13,7 +13,8 @@ def create_db(conn):
 
     conn.execute('''CREATE TABLE IF NOT EXISTS activeNodes
                 (nodeID INTEGER,
-                round INTEGER)''')
+                round INTEGER,
+                power FLOAT)''')
 
     conn.execute('''CREATE INDEX IF NOT EXISTS nodeID ON activeNodes (nodeID)''')
 

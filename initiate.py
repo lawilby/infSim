@@ -37,7 +37,7 @@ def thresholds(config, conn):
 
         if len(number_of_neighbours) != 0:
 
-            thresholds = [(int(math.ceil(float(Decimal.from_float(node['neighbours'])*Decimal(config['PARAMS']['thresh_prop'])))), node['nodeID']) for node in number_of_neighbours]
+            thresholds = [(int(math.ceil(float(Decimal(node['neighbours'])*Decimal(config['PARAMS']['thresh_prop'])))), node['nodeID']) for node in number_of_neighbours]
             conn.executemany('UPDATE nodes SET threshold=? WHERE nodeID=?', thresholds)
             number_of_neighbours = number_of_neighbours_query.fetchmany()
 
@@ -68,7 +68,7 @@ def incentivize(settings_config, results_config, conn, target_set):
         for node in target_set:
 
             target_file.write('{},{}\n'.format(node['nodeID'], node['threshold']))
-            new_threshold_value = int(math.floor(float(Decimal.from_float(node['threshold'])*Decimal(settings_config['PARAMS']['incentive_prop']))))
+            new_threshold_value = int(math.floor(float(Decimal(node['threshold'])*Decimal(settings_config['PARAMS']['incentive_prop']))))
             incentive_total += node['threshold'] - new_threshold_value
             nodes_to_incentivize.append((new_threshold_value, node['nodeID']))
 
@@ -86,8 +86,8 @@ def incentivize(settings_config, results_config, conn, target_set):
 
         print('Finished updating NODES table with influenced nodes ' + str(round(time.time() - start_time, 2)))
 
-        active_nodes_records = [(node['nodeID'], 0) for node in influenced_nodes]
-        conn.executemany('INSERT INTO activeNodes VALUES (?, ?)', active_nodes_records)
+        active_nodes_records = [(node['nodeID'], 0, 1) for node in influenced_nodes]
+        conn.executemany('INSERT INTO activeNodes VALUES (?, ?, ?)', active_nodes_records)
         
         details_file.write('0,{},{}\n'.format(len(active_nodes_records), len(nodes_to_influence))) 
         
