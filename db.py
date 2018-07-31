@@ -25,3 +25,19 @@ def create_db(conn):
     conn.execute('PRAGMA synchronous = OFF')
 
     conn.commit()
+
+def create_results_db(conn):
+
+    conn.execute('''CREATE TABLE IF NOT EXISTS results
+                (date TEXT,
+                 dataset TEXT,
+                 thresh REAL,
+                 lambda INTEGER,
+                 sel REAL,
+                 comp TEXT,
+                 inc REAL,
+                 decay INTEGER,
+                 seed INTEGER,
+                 rounds INTEGER,
+                 inf REAL,
+                 cost INTEGER)''')

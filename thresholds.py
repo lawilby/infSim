@@ -6,7 +6,7 @@ def thresholds_all_nodes(config, conn, thresh_db):
 
     thresholds_of_nodes_query = conn.execute('''SELECT threshold, nodeID FROM nodes''')
 
-    thresh_db_conn = sqlite3.connect('{}{}'.format(config['FILES']['parent_directory'],thresh_db))
+    thresh_db_conn = sqlite3.connect('{}/{}'.format(config['FILES']['parent_directory'],thresh_db))
 
     thresh_db_conn.execute('''CREATE TABLE IF NOT EXISTS nodes
                 (nodeID INTEGER PRIMARY KEY,
@@ -24,17 +24,17 @@ def thresholds_all_nodes(config, conn, thresh_db):
 
     thresh_db_conn.executemany('INSERT INTO nodes VALUES (?,?)', threshold_records)
 
-    thresh_db.conn.commit()
+    thresh_db_conn.commit()
 
-    thresh_db.conn.close()
+    thresh_db_conn.close()
 
-    n, bins, patches = plt.hist(thresholds_of_nodes, 75, range=(1,800), log=True, histtype='stepfilled')
+    n, bins, patches = plt.hist(thresholds_all_nodes, 75, range=(1,800), log=True, histtype='stepfilled')
 
     plt.xlabel('Threshold')
     plt.ylabel('Nodes')
     plt.title('Threshold Proportion: ' + config['PARAMS']['thresh_prop'])
 
-    plt.savefig('{}/thresh-{}.png'.format(config['FILES']['parent_directory']),config['PARAMS']['thresh_prop'].replace('.', ''))
+    plt.savefig('{}/thresh-{}'.format(config['FILES']['parent_directory'],config['PARAMS']['thresh_prop']).replace('.', ''))
 
     plt.cla()
     plt.clf()
@@ -50,16 +50,16 @@ def thresholds_target_set(config, conn, thresh_db):
     thresholds_of_target_set_query = conn.execute(query_string, node_ids)
     thresholds_incentivized = [node['threshold'] for node in thresholds_of_target_set_query]
 
-    thresh_db_conn = sqlite3.connect('{}{}'.format(config['FILES']['parent_directory'],thresh_db))
+    thresh_db_conn = sqlite3.connect('{}/{}'.format(config['FILES']['parent_directory'],thresh_db))
     original_thresholds_of_target_set_query = thresh_db_conn.execute(query_string,node_ids)
     thresholds_original = [node[0] for node in original_thresholds_of_target_set_query]
 
-    plt.hist(thresholds_incentivized, 75, range=(1,800), log=True, histtype='stepfilled')
-    plt.hist(thresholds_original, 75, range=(1,800), log=True, histtype='stepfilled') 
+    plt.hist(thresholds_incentivized, 400, range=(1,800), log=True, histtype='stepfilled', color='#1f77b4')
+    plt.hist(thresholds_original, 400, range=(1,800), log=True, histtype='stepfilled', color='#ff7f0e')
 
     plt.xlabel('Threshold')
     plt.ylabel('Target Set Nodes')
-    plt.title('Thresh Prop: {}  Time Window: {}  Target Set: {} Selection: {} Incentive: {} Decay: {}'
+    plt.title('Thre: {}   Lam: {}   Tar: {}   Sel: {}   Inc: {}   Dec: {}'
                     .format(config['PARAMS']['thresh_prop'], 
                             config['PARAMS']['lambda_val'], 
                             config['PARAMS']['target_set_prop'],
@@ -67,14 +67,14 @@ def thresholds_target_set(config, conn, thresh_db):
                             config['PARAMS']['incentive_prop'],
                             config['PARAMS']['decay']))
 
-    plt.savefig('{}/thresholds_target_set.png'.format(config['FILES']['directory']))
+    plt.savefig('{}/thresholds_target_set'.format(config['FILES']['directory']))
 
     plt.cla()
     plt.clf()
 
 def thresholds_influenced_nodes(config, conn):
 
-    thresholds_of_influenced_nodes_query = conn.execute('''SELECT threshold FROM node WHERE inf=1''')
+    thresholds_of_influenced_nodes_query = conn.execute('''SELECT threshold FROM nodes WHERE inf=1''')
 
     thresholds_of_influenced_nodes = [node['threshold'] for node in thresholds_of_influenced_nodes_query]
 
@@ -82,7 +82,7 @@ def thresholds_influenced_nodes(config, conn):
 
     plt.xlabel('Threshold')
     plt.ylabel('Influenced Nodes')
-    plt.title('Thresh Prop: {}  Time Window: {}  Target Set: {} Selection: {} Incentive: {} Decay: {}'
+    plt.title('Thre: {}   Lam: {}   Tar: {}   Sel: {}   Inc: {}   Dec: {}'
                     .format(config['PARAMS']['thresh_prop'], 
                             config['PARAMS']['lambda_val'], 
                             config['PARAMS']['target_set_prop'],
@@ -90,22 +90,22 @@ def thresholds_influenced_nodes(config, conn):
                             config['PARAMS']['incentive_prop'],
                             config['PARAMS']['decay']))
 
-    plt.savefig('{}/thresholds_inf.png'.format(config['FILES']['directory'])
+    plt.savefig('{}/thresholds_inf'.format(config['FILES']['directory']))
 
     plt.cla()
     plt.clf()
 
 def thresholds_not_influenced_nodes(config, conn):
 
-    thresholds_of_influenced_nodes_query = conn.execute('''SELECT threshold FROM node WHERE inf=0''')
+    thresholds_of_influenced_nodes_query = conn.execute('''SELECT threshold FROM nodes WHERE inf=0''')
 
     thresholds_of_influenced_nodes = [node['threshold'] for node in thresholds_of_influenced_nodes_query]
 
-    n, bins, patches = plt.hist(thresholds_of_influenced_nodes, 75, range=(1,500), log=True, histtype='stepfilled')
+    n, bins, patches = plt.hist(thresholds_of_influenced_nodes, 75, range=(1,500), log=True, histtype='stepfilled', color='#ff7f0e')
 
     plt.xlabel('Threshold')
     plt.ylabel('Not Influenced Nodes')
-    plt.title('Thresh Prop: {}  Time Window: {}  Target Set: {} Selection: {} Incentive: {} Decay: {}'
+    plt.title('Thre: {}   Lam: {}   Tar: {}   Sel: {}   Inc: {}   Dec: {}'
                     .format(config['PARAMS']['thresh_prop'], 
                             config['PARAMS']['lambda_val'], 
                             config['PARAMS']['target_set_prop'],
@@ -113,7 +113,7 @@ def thresholds_not_influenced_nodes(config, conn):
                             config['PARAMS']['incentive_prop'],
                             config['PARAMS']['decay']))
 
-    plt.savefig('{}/thresholds__not_inf.png'.format(config['FILES']['directory'])
+    plt.savefig('{}/thresholds__not_inf'.format(config['FILES']['directory']))
 
     plt.cla()
     plt.clf()

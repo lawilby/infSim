@@ -67,8 +67,8 @@ def incentivize(settings_config, results_config, conn, target_set):
             
         for node in target_set:
 
-            target_file.write('{},{}\n'.format(node['nodeID'], node['threshold']))
-            new_threshold_value = int(math.floor(float(Decimal(node['threshold'])*Decimal(settings_config['PARAMS']['incentive_prop']))))
+            target_file.write('{}\n'.format(node['nodeID']))
+            new_threshold_value = int(math.floor(float(Decimal(node['threshold'])*(Decimal('1') - Decimal(settings_config['PARAMS']['incentive_prop'])))))
             incentive_total += node['threshold'] - new_threshold_value
             nodes_to_incentivize.append((new_threshold_value, node['nodeID']))
 

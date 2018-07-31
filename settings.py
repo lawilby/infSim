@@ -7,8 +7,8 @@ def make_settings_file(filepath, parent_filepath, params):
 
 
     config['FILES'] = {
-        'nodes'            : '/Users/laurawilby/dev/experiments_data/YouTube-dataset/data/nodes.csv',
-        'edges'            : '/Users/laurawilby/dev/experiments_data/YouTube-dataset/data/edges.csv',
+        'nodes'            : '/local-scratch/lw-data/YouTube-dataset/data/nodes.csv',
+        'edges'            : '/local-scratch/lw-data/YouTube-dataset/data/edges.csv',
         'DB'               : filepath + '/' + uuid.uuid4().hex + '.db',
         'directory'        : filepath,
         'parent_directory' : parent_filepath,
