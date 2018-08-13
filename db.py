@@ -3,7 +3,7 @@ import sqlite3
 def create_db(conn):
 
     conn.execute('''CREATE TABLE IF NOT EXISTS nodes
-                (nodeID INTEGER PRIMARY KEY DESC,
+                (nodeID INTEGER PRIMARY KEY,
                 threshold INTEGER,
                 lambda INTEGER,
                 inf INTEGER)''')

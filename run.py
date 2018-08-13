@@ -7,7 +7,7 @@ from settings import make_settings_file
 from execute import execute_simulation
 from db import create_results_db
 
-parent_directory = '/Users/laurawilby/dev/experiments_data/new'
+parent_directory = '/local-scratch/lw-data/new_2'
 
 results_conn = sqlite3.connect('{}/results.db'.format(parent_directory))
 results_conn.row_factory = sqlite3.Row
@@ -17,20 +17,20 @@ create_results_db(results_conn)
 params = dict()
 
 threshold_levels      = [0.5,0]
-lambda_levels         = [2,0]
+lambda_levels         = [5,0]
 incentive_levels      = [.5,1]
 decay                 = [0,1]
-budget_levels         = [50,200]
+budget_levels         = [50,100]
 stan_youtube          = {
                          'name'     : 'stan_youtube',
-                         'edges'    : '/Users/laurawilby/dev/experiments_data/youtube.txt',
-                         'nodes'    : '/Users/laurawilby/dev/experiments_data/youtube.txt'
+                         'edges'    : '/local-scratch/lw-data/youtube.txt',
+                         'nodes'    : '/local-scratch/lw-data/youtube.txt'
                         }
 
 stan_enron            = {
                          'name'     : 'stan_enron',
-                         'edges'    : '/Users/laurawilby/dev/experiments_data/enron.txt',
-                         'nodes'    : '/Users/laurawilby/dev/experiments_data/enron.txt'
+                         'edges'    : '/local-scratch/lw-data/enron.txt',
+                         'nodes'    : '/local-scratch/lw-data/enron.txt'
                         }
 datasets              = [stan_enron,stan_youtube]
 

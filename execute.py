@@ -47,7 +47,7 @@ def execute_simulation(directory_name, results_db):
         lambda_value_degree(settings_config, conn)
 
     files_in_parent_dir  = os.listdir(settings_config['FILES']['parent_directory'])
-    current_threshold_db = 'nodes-thresh-{}.db'.format(settings_config['PARAMS']['thresh_prop'].replace('.', ''))
+    current_threshold_db = 'nodes-thresh-{}-{}.db'.format(settings_config['PARAMS']['thresh_prop'], settings_config['FILES']['dataset']).replace('.', '')
 
     if current_threshold_db not in files_in_parent_dir:
 

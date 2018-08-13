@@ -34,7 +34,7 @@ def thresholds_all_nodes(config, conn, thresh_db):
     plt.ylabel('Nodes')
     plt.title('Threshold Proportion: ' + config['PARAMS']['thresh_prop'])
 
-    plt.savefig('{}/thresh-{}'.format(config['FILES']['parent_directory'],config['PARAMS']['thresh_prop']).replace('.', ''))
+    plt.savefig('{}/thresh-{}-{}'.format(config['FILES']['parent_directory'],config['PARAMS']['thresh_prop'], config['FILES']['dataset']).replace('.', ''))
 
     plt.cla()
     plt.clf()

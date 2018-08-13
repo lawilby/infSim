@@ -128,8 +128,7 @@ def incentivize(settings_config, results_config, conn):
 
     seed(5)
 
-    number_of_nodes = conn.execute('SELECT count(*) as num FROM nodes').fetchone()['num']
-    rows = [i for i in range(1,number_of_nodes+1)]
+    rows = conn.execute('SELECT nodeID, threshold FROM nodes').fetchall()
 
     budget = int(settings_config['PARAMS']['budget'])
 
@@ -140,9 +139,9 @@ def incentivize(settings_config, results_config, conn):
         
         while budget > 0:
 
-            row_to_incentivize = choice(rows)
-            node = conn.execute('''SELECT nodes.nodeID, nodes.threshold FROM nodes 
-                                    WHERE nodes.rowid=?''',(row_to_incentivize,)).fetchone()
+            node = choice(rows)
+            # node = conn.execute('''SELECT nodes.nodeID, nodes.threshold FROM nodes 
+            #                         WHERE nodes.rowid=?''',(row_to_incentivize,)).fetchone()
 
             target_file.write('{}\n'.format(node['nodeID']))
 
@@ -156,7 +155,7 @@ def incentivize(settings_config, results_config, conn):
             budget = budget - incentive_total
 
             nodes_to_incentivize.append((new_threshold_value,node['nodeID']))
-            rows.remove(row_to_incentivize)
+            rows.remove(node)
 
         conn.executemany('UPDATE nodes SET threshold=? WHERE nodeID=?', nodes_to_incentivize)
 
