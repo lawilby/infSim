@@ -7,44 +7,56 @@ from settings import make_settings_file
 from execute import execute_simulation
 from db import create_results_db
 
-parent_directory = '/local-scratch/lw-data/first-run'
+parent_directory = '/Users/laurawilby/dev/experiments_data/new'
 
 results_conn = sqlite3.connect('{}/results.db'.format(parent_directory))
 results_conn.row_factory = sqlite3.Row
 
 create_results_db(results_conn)
 
-params = {
-    'dataset': 'asu_youtube'
-}
+params = dict()
 
-threshold_levels      = [0.4,0.8]
-lambda_levels         = [1,5]
-selection_size_levels = [.0001,.01]
-composition_levels    = ['random','top']
-incentive_levels      = [0.2,1]
+threshold_levels      = [0.5,0]
+lambda_levels         = [2,0]
+incentive_levels      = [.5,1]
 decay                 = [0,1]
+budget_levels         = [50,200]
+stan_youtube          = {
+                         'name'     : 'stan_youtube',
+                         'edges'    : '/Users/laurawilby/dev/experiments_data/youtube.txt',
+                         'nodes'    : '/Users/laurawilby/dev/experiments_data/youtube.txt'
+                        }
+
+stan_enron            = {
+                         'name'     : 'stan_enron',
+                         'edges'    : '/Users/laurawilby/dev/experiments_data/enron.txt',
+                         'nodes'    : '/Users/laurawilby/dev/experiments_data/enron.txt'
+                        }
+datasets              = [stan_enron,stan_youtube]
 
 experiment = 1
-for thresh in threshold_levels:
 
-    params['thresh_prop'] = thresh
+for dataset in datasets:
 
-    for lambda_val in lambda_levels:
+    params['dataset'] = dataset['name']
+    params['nodes']   = dataset['edges']
+    params['edges']   = dataset['nodes']
 
-        params['lambda_val'] = lambda_val
+    for thresh in threshold_levels:
 
-        for sel in selection_size_levels:
+        params['thresh_prop'] = thresh
 
-            params['target_set_prop'] = sel
+        for incentive in incentive_levels:
 
-            for comp in composition_levels:
+            params['incentive_prop'] = incentive
 
-                params['target_set_sel'] = comp
+            for lambda_val in lambda_levels:
 
-                for inc in incentive_levels:
+                params['lambda_val'] = lambda_val
 
-                    params['incentive_prop'] = inc
+                for budget in budget_levels:
+
+                    params['budget'] = budget
 
                     for val in decay:
 

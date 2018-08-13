@@ -11,6 +11,7 @@ import configparser
 import time
 from decimal import Decimal
 
+
 def run_sim(config, conn):
 
     start_time = time.time()
@@ -30,10 +31,14 @@ def run_sim(config, conn):
 
             ## Add nodes which are still active to current round.
             # NOTE: assumption that node becomes active and is active for lambda consecutive rounds before becoming inactive and never being active again.
-            nodes_still_active_query = conn.execute('''SELECT count(*) as num_rounds_active, nodes.nodeID FROM nodes
+            nodes_still_active_query = conn.execute('''SELECT count(distinct(activeNodes.round)) as num_rounds_active, 
+                                                              count(distinct(edges.nodeID2)) as neighbours, 
+                                                              nodes.nodeID, 
+                                                              nodes.lambda FROM nodes
                                                         JOIN activeNodes ON nodes.nodeID = activeNodes.nodeID
+                                                        JOIN edges ON nodes.nodeID = edges.nodeID1
                                                         GROUP BY nodes.nodeID
-                                                        ORDER BY count(*) ASC''')
+                                                        HAVING count(distinct(activeNodes.round)) < nodes.lambda''')
 
             nodes_still_active_query.arraysize = 500
             activeNodes_records = list()
@@ -46,24 +51,16 @@ def run_sim(config, conn):
 
                     for node in nodes_still_active:
 
-                        if node['num_rounds_active'] < int(config['PARAMS']['lambda_val']):
+                        if int(config['PARAMS']['decay']):
 
-                            if int(config['PARAMS']['decay']):
-
-                                power = float(Decimal('1') - Decimal('1')/Decimal(config['PARAMS']['lambda_val'])*Decimal(node['num_rounds_active']))
-
-                            else:
-
-                                power = 1
-
-                            activeNodes_records.append((node['nodeID'], sim_round, power))
+                            power = float(Decimal(node['neighbours']) - (Decimal(node['neighbours'])/Decimal(node['lambda']))*Decimal(node['num_rounds_active']))
 
                         else:
 
-                            # Ordered by count so this condition will not be met on the rest of the nodes
-                            # TODO: can I refactor this to make it not do the rest of the fetches as well?
-                            break
+                            power = 1
 
+                        activeNodes_records.append((node['nodeID'], sim_round, power))
+                       
                 else:
 
                     break
@@ -77,7 +74,8 @@ def run_sim(config, conn):
                                                             JOIN edges ON nodes.nodeID = edges.nodeID1
                                                             JOIN activeNodes ON edges.nodeID2 = activeNodes.nodeID
                                                             WHERE nodes.inf=0 AND activeNodes.round=?
-                                                            GROUP BY nodes.nodeID HAVING sum(activeNodes.power) >= nodes.threshold''', (sim_round-1,))
+                                                            GROUP BY nodes.nodeID 
+                                                            HAVING sum(activeNodes.power) >= nodes.threshold''', (sim_round-1,))
 
             nodes_not_influenced_query.arraysize = 500
             infNodes_records = list()
@@ -91,7 +89,16 @@ def run_sim(config, conn):
                     # ## For each node - check if should be influenced
                     for node in nodes_not_influenced:
 
-                        activeNodes_records.append((node['nodeID'], sim_round, 1))
+                        if int(config['PARAMS']['decay']):
+
+                            neighbours = conn.execute('''SELECT count(edges.nodeID2) FROM edges WHERE edges.nodeID1=?''', (node['nodeID'],)).fetchone()[0]
+                            power = neighbours
+
+                        else:
+
+                            power = 1
+                        
+                        activeNodes_records.append((node['nodeID'], sim_round, power))
                         infNodes_records.append((node['nodeID'],))
 
                 else:

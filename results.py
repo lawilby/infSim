@@ -37,14 +37,12 @@ def record_results(settings_config, results_config, conn, results_db_conn):
                     settings_config['FILES']['dataset'],
                     settings_config['PARAMS']['thresh_prop'],
                     settings_config['PARAMS']['lambda_val'],
-                    settings_config['PARAMS']['target_set_prop'],
-                    settings_config['PARAMS']['target_set_sel'],
                     settings_config['PARAMS']['incentive_prop'],
                     settings_config['PARAMS']['decay'],
+                    settings_config['PARAMS']['budget'],
                     5,
                     rounds,
-                    percentage,
-                    results_config['RESULTS']['incentive_total'])
+                    percentage)
 
-    results_db_conn.execute('INSERT INTO results VALUES (?,?,?,?,?,?,?,?,?,?,?,?)', results_row)
+    results_db_conn.execute('INSERT INTO results VALUES (?,?,?,?,?,?,?,?,?,?)', results_row)
     results_db_conn.commit()
