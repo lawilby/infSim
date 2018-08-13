@@ -7,8 +7,10 @@ import os
 from settings import make_settings_file
 from db import create_db
 from parse import parse_asu_data
-from initiate import thresholds
-from initiate import select_random_target_set
+from parse import parse_stanford_data
+from initiate import thresholds_proportion
+from initiate import thresholds_random
+from initiate import lambda_value_degree
 from initiate import incentivize
 from sim import run_sim
 from results import record_results
@@ -30,17 +32,19 @@ def execute_simulation(directory_name, results_db):
 
     create_db(conn) 
 
-    parse_asu_data(settings_config, conn)
+    parse_stanford_data(settings_config, conn)
 
-    thresholds(settings_config, conn)
+    if settings_config['PARAMS']['thresh_prop'] == '0':
 
-    if settings_config['PARAMS']['target_set_sel'] == 'random':
+        thresholds_random(settings_config, conn)
 
-        target_set = select_random_target_set(settings_config, conn)
+    else:
 
-    if settings_config['PARAMS']['target_set_sel'] == 'top':
+        thresholds_proportion(settings_config, conn)
 
-        target_set = select_target_set_top(settings_config, conn)
+    if settings_config['PARAMS']['lambda_val'] == '0':
+
+        lambda_value_degree(settings_config, conn)
 
     files_in_parent_dir  = os.listdir(settings_config['FILES']['parent_directory'])
     current_threshold_db = 'nodes-thresh-{}.db'.format(settings_config['PARAMS']['thresh_prop'].replace('.', ''))
@@ -52,7 +56,7 @@ def execute_simulation(directory_name, results_db):
 
     results_config['RESULTS'] = dict()
     
-    incentivize(settings_config, results_config, conn, target_set)
+    incentivize(settings_config, results_config, conn)
 
     thresholds_target_set(settings_config, conn, current_threshold_db)
 

@@ -12,19 +12,18 @@ import time
 import configparser
 import math
 from decimal import Decimal
-from random import seed
-from random import sample
 
 
-################################################ Set Node Thresholds
+
+################################################ Set Node Thresholds Proportionally
 '''
-Sets all nodes in the database found in the given directory. 
 Threshold is set to the proportion of the neighbours set in setting.ini
 Thresholds are set to the nearest integer value using a ceiling function. 
 '''
-def thresholds(config, conn):
+def thresholds_proportion(config, conn):
 
     start_time = time.time()
+    print('Setting the thresholds proportionally ' + str(round(time.time() - start_time, 2)))
 
     number_of_neighbours_query = conn.execute('''SELECT count(*) as neighbours, nodeID FROM nodes
                                                 JOIN edges ON nodes.nodeID = edges.nodeID1 GROUP BY nodes.nodeID''')
@@ -50,106 +49,146 @@ def thresholds(config, conn):
     print('Finished setting thresholds ' + str(round(time.time() - start_time, 2)))
 
 
-################################################ Prepare Round Zero By Incentivizing Nodes
+################################################ Set Node Thresholds Randomly
 '''
-target_set is a sqlite3 cursor object with rows from the nodes table to incentivize
+Threshold is set to a uniform random integer in [1, d(v)]
 '''
-def incentivize(settings_config, results_config, conn, target_set):
+def thresholds_random(config, conn):
+
+    from random import seed
+    from random import randrange
+
+    seed(123)
 
     start_time = time.time()
-    print('Starting incentivization')
 
-    ####### Incentivizing Target Set
+    number_of_neighbours_query = conn.execute('''SELECT count(*) as neighbours, nodeID FROM nodes
+                                                JOIN edges ON nodes.nodeID = edges.nodeID1 GROUP BY nodes.nodeID''')
+
+    number_of_neighbours_query.arraysize = 500
+
+    while True:
+
+        number_of_neighbours = number_of_neighbours_query.fetchmany()
+
+        if len(number_of_neighbours) != 0:
+
+            thresholds = [(randrange(1, node['neighbours']+1), node['nodeID']) for node in number_of_neighbours]
+            conn.executemany('UPDATE nodes SET threshold=? WHERE nodeID=?', thresholds)
+            number_of_neighbours = number_of_neighbours_query.fetchmany()
+
+        else:
+
+            break
+
+    conn.commit()
+
+    print('Finished setting thresholds ' + str(round(time.time() - start_time, 2)))
+
+
+################################################ Set Lambda Value
+'''
+Lambda is set to the number of neighbours
+'''
+def lambda_value_degree(config, conn):
+    
+    start_time = time.time()
+
+    number_of_neighbours_query = conn.execute('''SELECT count(*) as neighbours, nodeID FROM nodes
+                                                JOIN edges ON nodes.nodeID = edges.nodeID1 GROUP BY nodes.nodeID''')
+
+    number_of_neighbours_query.arraysize = 500
+
+    while True:
+
+        number_of_neighbours = number_of_neighbours_query.fetchmany()
+
+        if len(number_of_neighbours) != 0:
+
+            lambda_values = [(node['neighbours'], node['nodeID']) for node in number_of_neighbours]
+            conn.executemany('UPDATE nodes SET lambda=? WHERE nodeID=?', lambda_values)
+            number_of_neighbours = number_of_neighbours_query.fetchmany()
+
+        else:
+
+            break
+
+    conn.commit()
+
+    print('Finished setting lambda values ' + str(round(time.time() - start_time, 2)))
+
+
+def incentivize(settings_config, results_config, conn):
+
+    from random import seed
+    from random import choice
+
+    start_time = time.time()
+    print('Selecting Target Set')
+
+    seed(5)
+
+    number_of_nodes = conn.execute('SELECT count(*) as num FROM nodes').fetchone()['num']
+    rows = [i for i in range(1,number_of_nodes+1)]
+
+    budget = int(settings_config['PARAMS']['budget'])
+
     nodes_to_incentivize = list()
-    incentive_total = 0
+    active_nodes_records = list()
 
     with open("{}/target-set.csv".format(settings_config['FILES']['directory']), 'w') as target_file, open("{}/simulation-details.csv".format(settings_config['FILES']['directory']), "w") as details_file:
-            
-        for node in target_set:
+        
+        while budget > 0:
+
+            row_to_incentivize = choice(rows)
+            node = conn.execute('''SELECT nodes.nodeID, nodes.threshold FROM nodes 
+                                    WHERE nodes.rowid=?''',(row_to_incentivize,)).fetchone()
 
             target_file.write('{}\n'.format(node['nodeID']))
-            new_threshold_value = int(math.floor(float(Decimal(node['threshold'])*(Decimal('1') - Decimal(settings_config['PARAMS']['incentive_prop'])))))
-            incentive_total += node['threshold'] - new_threshold_value
-            nodes_to_incentivize.append((new_threshold_value, node['nodeID']))
 
-        results_config['RESULTS']['incentive_total'] = str(incentive_total)
-        
-        conn.executemany('''UPDATE nodes SET threshold=? WHERE nodeID=?''', nodes_to_incentivize)
+            new_threshold_value = int(math.floor(float(Decimal(node['threshold'])*(Decimal('1') - Decimal(settings_config['PARAMS']['incentive_prop'])))))
+            incentive_total = node['threshold'] - new_threshold_value
+            
+            if incentive_total > budget:
+
+                break
+                        
+            budget = budget - incentive_total
+
+            nodes_to_incentivize.append((new_threshold_value,node['nodeID']))
+            rows.remove(row_to_incentivize)
+
+        conn.executemany('UPDATE nodes SET threshold=? WHERE nodeID=?', nodes_to_incentivize)
+
+        conn.commit()
 
         ####### Activate nodes which now have threshold 0
-        influenced_nodes = conn.execute('SELECT nodeID FROM nodes Where threshold=0').fetchall()
+        influenced_nodes = conn.execute('''SELECT nodes.nodeID, count(edges.nodeID2) as neighbours FROM nodes
+                                            JOIN edges on edges.nodeID1 = nodes.nodeID
+                                            WHERE nodes.threshold=0
+                                            GROUP BY nodes.nodeID''').fetchall()
 
         nodes_to_influence = [(node['nodeID'],) for node in influenced_nodes]
-
 
         conn.executemany('''UPDATE nodes SET inf=1 WHERE nodeID=?''', nodes_to_influence)
 
         print('Finished updating NODES table with influenced nodes ' + str(round(time.time() - start_time, 2)))
 
-        active_nodes_records = [(node['nodeID'], 0, 1) for node in influenced_nodes]
+        if settings_config['PARAMS']['decay']:
+
+            active_nodes_records = [(node['nodeID'],0,node['neighbours']) for node in influenced_nodes]
+        
+        else:
+            
+            active_nodes_records = [(node['nodeID'], 0, 1) for node in influenced_nodes]
+        
         conn.executemany('INSERT INTO activeNodes VALUES (?, ?, ?)', active_nodes_records)
         
         details_file.write('0,{},{}\n'.format(len(active_nodes_records), len(nodes_to_influence))) 
         
         conn.commit()
-
+        
         print('Finished inserting active nodes for first round ' + str(round(time.time() - start_time, 2)))
 
 
-
-################################################ Random Set of Nodes
-def select_random_target_set(config, conn):
-
-    start_time = time.time()
-    print('Selecting Target Set')
-
-    number_of_nodes = conn.execute('SELECT count(*) as num FROM nodes').fetchone()['num']
-    target_set_size = int(Decimal(config['PARAMS']['target_set_prop'])*Decimal(number_of_nodes))
-
-    seed(5) # TODO: determine seeds  
-    random_nodes = list()
-
-    if target_set_size > number_of_nodes:
-
-        raise Exception()
-
-    random_nodes = sample(range(1,number_of_nodes+1), k=target_set_size)
-
-    query_string = 'SELECT * FROM nodes WHERE rowid in ({seq})'.format(seq=','.join(['?']*target_set_size))
-    target_set = conn.execute(query_string, random_nodes)
-
-    print('Finished Selecting Random Target Set {}'.format(str(round(time.time() - start_time, 2))))
-    
-    return target_set
-
-
-################################################ Set of Nodes With Highest Thresholds
-def select_target_set_top(config, conn):
-
-    start_time = time.time()
-    print('Selecting Target Set')
-
-    number_of_nodes = conn.execute('SELECT count(*) as num FROM nodes ').fetchone()['num']
-    target_set_size = int(Decimal(config['PARAMS']['target_set_prop'])*Decimal(number_of_nodes))
-
-    target_set = conn.execute('SELECT nodeID FROM node ORDER BY threshold DESC LIMIT ?', target_set_size)
-
-    print('Finished Selecting Target Set With Highest Thresholds {}'.format(str(round(time.time() - start_time, 2))))
-
-    return target_set
-
-################################################ Set of Nodes With Lowest Thresholds
-def select_target_set_bottom(config, conn):
-
-    start_time = time.time()
-    print('Selecting Target Set')
-
-    number_of_nodes = conn.execute('SELECT count(*) as num FROM nodes ').fetchone()['num']
-    target_set_size = int(Decimal(config['PARAMS']['target_set_prop'])*Decimal(number_of_nodes))
-
-    target_set = conn.execute('SELECT nodeID FROM node ORDER BY threshold ASC LIMIT ?', target_set_size)
-
-    print('Finished Selecting Target Set With Lowest Thresholds {}'.format(str(round(time.time() - start_time, 2))))
-
-    return target_set
 

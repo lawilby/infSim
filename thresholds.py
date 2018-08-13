@@ -59,12 +59,12 @@ def thresholds_target_set(config, conn, thresh_db):
 
     plt.xlabel('Threshold')
     plt.ylabel('Target Set Nodes')
-    plt.title('Thre: {}   Lam: {}   Tar: {}   Sel: {}   Inc: {}   Dec: {}'
-                    .format(config['PARAMS']['thresh_prop'], 
+    plt.title('Data: {}   Thre: {}   Lam: {}   Inc: {}   $: {}   Dec: {}'
+                    .format(config['FILES']['dataset'],
+                            config['PARAMS']['thresh_prop'], 
                             config['PARAMS']['lambda_val'], 
-                            config['PARAMS']['target_set_prop'],
-                            config['PARAMS']['target_set_sel'],
                             config['PARAMS']['incentive_prop'],
+                            config['PARAMS']['budget'],
                             config['PARAMS']['decay']))
 
     plt.savefig('{}/thresholds_target_set'.format(config['FILES']['directory']))
@@ -82,12 +82,12 @@ def thresholds_influenced_nodes(config, conn):
 
     plt.xlabel('Threshold')
     plt.ylabel('Influenced Nodes')
-    plt.title('Thre: {}   Lam: {}   Tar: {}   Sel: {}   Inc: {}   Dec: {}'
-                    .format(config['PARAMS']['thresh_prop'], 
+    plt.title('Data: {}   Thre: {}   Lam: {}   Inc: {}   $: {}   Dec: {}'
+                    .format(config['FILES']['dataset'],
+                            config['PARAMS']['thresh_prop'], 
                             config['PARAMS']['lambda_val'], 
-                            config['PARAMS']['target_set_prop'],
-                            config['PARAMS']['target_set_sel'],
                             config['PARAMS']['incentive_prop'],
+                            config['PARAMS']['budget'],
                             config['PARAMS']['decay']))
 
     plt.savefig('{}/thresholds_inf'.format(config['FILES']['directory']))
@@ -105,12 +105,12 @@ def thresholds_not_influenced_nodes(config, conn):
 
     plt.xlabel('Threshold')
     plt.ylabel('Not Influenced Nodes')
-    plt.title('Thre: {}   Lam: {}   Tar: {}   Sel: {}   Inc: {}   Dec: {}'
-                    .format(config['PARAMS']['thresh_prop'], 
+    plt.title('Data: {}   Thre: {}   Lam: {}   Inc: {}   $: {}   Dec: {}'
+                    .format(config['FILES']['dataset'],
+                            config['PARAMS']['thresh_prop'], 
                             config['PARAMS']['lambda_val'], 
-                            config['PARAMS']['target_set_prop'],
-                            config['PARAMS']['target_set_sel'],
                             config['PARAMS']['incentive_prop'],
+                            config['PARAMS']['budget'],
                             config['PARAMS']['decay']))
 
     plt.savefig('{}/thresholds__not_inf'.format(config['FILES']['directory']))

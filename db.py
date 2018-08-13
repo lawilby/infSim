@@ -3,8 +3,9 @@ import sqlite3
 def create_db(conn):
 
     conn.execute('''CREATE TABLE IF NOT EXISTS nodes
-                (nodeID INTEGER PRIMARY KEY,
+                (nodeID INTEGER PRIMARY KEY DESC,
                 threshold INTEGER,
+                lambda INTEGER,
                 inf INTEGER)''')
 
     conn.execute('''CREATE TABLE IF NOT EXISTS edges
@@ -33,11 +34,9 @@ def create_results_db(conn):
                  dataset TEXT,
                  thresh REAL,
                  lambda INTEGER,
-                 sel REAL,
-                 comp TEXT,
                  inc REAL,
                  decay INTEGER,
+                 budget INTEGER,
                  seed INTEGER,
                  rounds INTEGER,
-                 inf REAL,
-                 cost INTEGER)''')
+                 inf REAL)''')
