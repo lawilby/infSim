@@ -2,7 +2,7 @@ import sqlite3
 import numpy as np
 from itertools import combinations
 
-directory_name = '/local-scratch/lw-data/new_2'
+directory_name = '/Users/laurawilby/dev/experiments_data/new_14'
 
 one = list()
 '''threshold'''
@@ -23,9 +23,9 @@ pattern = [1]*4
 pattern.extend([-1]*4)
 one.append(np.tile(pattern,8))
 
-'''incentive'''
-pattern = [1,1,-1,-1]
-one.append(np.tile(pattern,16))
+ '''incentive'''
+ pattern = [1,1,-1,-1]
+ one.append(np.tile(pattern,16))
 
 '''decay'''
 pattern = [1,-1]
@@ -45,8 +45,8 @@ for (a,b,c,d) in combinations(one,4):
 for (a,b,c,d,e) in combinations(one,5):
     columns.append(a*b*c*d*e)
 
-for (a,b,c,d,e,f) in combinations(one,6):
-    columns.append(a*b*c*d*e*f)
+ for (a,b,c,d,e,f) in combinations(one,6):
+     columns.append(a*b*c*d*e*f)
 
 # connect to results db and build y-s as seperate np array
 
@@ -93,8 +93,8 @@ Rounds_qs = np.array(Rounds_qs)
 print(Influence_qs)
 print(Rounds_qs)
 
-Influence_qs = np.divide(Influence_qs, 64)
-Rounds_qs = np.divide(Rounds_qs, 64)
+Influence_qs = np.divide(Influence_qs, 32)
+Rounds_qs = np.divide(Rounds_qs, 32)
 
 print(Influence_qs)
 print(Rounds_qs)
@@ -106,8 +106,8 @@ Rounds_qs = np.square(Rounds_qs)
 print(Influence_qs)
 print(Rounds_qs)
 
-Influence_qs = np.multiply(4096,Influence_qs)
-Rounds_qs = np.multiply(4096, Rounds_qs)
+Influence_qs = np.multiply(32,Influence_qs)
+Rounds_qs = np.multiply(32, Rounds_qs)
 
 SST_Inf = np.sum(Influence_qs)
 SST_Rou = np.sum(Rounds_qs)
@@ -125,7 +125,7 @@ for inf, rou in zip(Influence_qs, Rounds_qs):
     percentages_influence.append(inf_percent)
     percentages_rounds.append(round_percent)
 
-labels = ['dataset', 'thresh', 'lambda', 'inc', 'decay', 'budget']
+labels = ['dataset', 'thresh', 'inc',  'lambda', 'budget']
 column_labels = list(labels)
 
 for (a,b) in combinations(labels,2):
@@ -140,8 +140,8 @@ for (a,b,c,d) in combinations(labels,4):
 for (a,b,c,d,e) in combinations(labels,5):
     column_labels.append('{} {} {} {} {}'.format(a,b,c,d,e))
 
-for (a,b,c,d,e,f) in combinations(labels,6):
-    column_labels.append('{} {} {} {} {}'.format(a,b,c,d,e,f))
+ for (a,b,c,d,e,f) in combinations(labels,6):
+     column_labels.append('{} {} {} {} {}'.format(a,b,c,d,e,f))
 
 with open('{}/results.txt'.format(directory_name), 'w') as results_text:
 
