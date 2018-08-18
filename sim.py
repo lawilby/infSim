@@ -53,7 +53,11 @@ def run_sim(config, conn):
 
                         if int(config['PARAMS']['decay']):
 
-                            power = float(Decimal(node['neighbours']) - (Decimal(node['neighbours'])/Decimal(node['lambda']))*Decimal(node['num_rounds_active']))
+                            power = float(Decimal(node['neighbours'])/Decimal('2') - (Decimal(node['neighbours'])/(Decimal('2')*Decimal(node['lambda'])))*Decimal(node['num_rounds_active']))
+
+                        elif int(config['PARAMS']['decay']) == 2:
+
+                            power = float(Decimal(node['lambda']) - Decimal(node['num_rounds_active']))
 
                         else:
 
@@ -70,7 +74,7 @@ def run_sim(config, conn):
             ''' Look at nodes which have not been influenced. 
                 If they have >= threshold neighbours which are active this round, then they become influenced and active. 
             '''
-            nodes_not_influenced_query = conn.execute('''SELECT nodes.nodeID, nodes.threshold FROM nodes
+            nodes_not_influenced_query = conn.execute('''SELECT nodes.nodeID, nodes.threshold, nodes.lambda FROM nodes
                                                             JOIN edges ON nodes.nodeID = edges.nodeID1
                                                             JOIN activeNodes ON edges.nodeID2 = activeNodes.nodeID
                                                             WHERE nodes.inf=0 AND activeNodes.round=?
@@ -92,7 +96,11 @@ def run_sim(config, conn):
                         if int(config['PARAMS']['decay']):
 
                             neighbours = conn.execute('''SELECT count(edges.nodeID2) FROM edges WHERE edges.nodeID1=?''', (node['nodeID'],)).fetchone()[0]
-                            power = neighbours
+                            power = neighbours/2.0
+
+                        elif int(config['PARAMS']['decay']) == 2:
+
+                            power = float(node['lambda'])
 
                         else:
 
