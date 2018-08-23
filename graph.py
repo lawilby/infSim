@@ -16,11 +16,13 @@ for i in range(1,65):
         results_config.read('{}/{}/results.ini'.format(directory_name, i))
         total_nodes = results_config['RESULTS']['total_nodes']
 
+        cumulative_value = 0
         for line in f:
 
             data = line.split(',')
             x.append(int(data[0]))
-            y.append(100*float(data[2].strip())/float(total_nodes))
+            cumulative_value = cumulative_value + 100*float(data[2].strip())/float(total_nodes)
+            y.append(cumulative_value)
         
         print(x)
         print(y)
@@ -39,4 +41,3 @@ for i in range(1,65):
         plt.cla()
         plt.clf()
 
-         

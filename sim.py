@@ -53,11 +53,7 @@ def run_sim(config, conn):
 
                         if int(config['PARAMS']['decay']):
 
-                            power = float(Decimal(node['neighbours'])/Decimal('2') - (Decimal(node['neighbours'])/(Decimal('2')*Decimal(node['lambda'])))*Decimal(node['num_rounds_active']))
-
-                        elif int(config['PARAMS']['decay']) == 2:
-
-                            power = float(Decimal(node['lambda']) - Decimal(node['num_rounds_active']))
+                            power = float(Decimal('1') - Decimal('1')/Decimal(node['lambda'])*Decimal(node['num_rounds_active']))
 
                         else:
 
@@ -93,20 +89,7 @@ def run_sim(config, conn):
                     # ## For each node - check if should be influenced
                     for node in nodes_not_influenced:
 
-                        if int(config['PARAMS']['decay']):
-
-                            neighbours = conn.execute('''SELECT count(edges.nodeID2) FROM edges WHERE edges.nodeID1=?''', (node['nodeID'],)).fetchone()[0]
-                            power = neighbours/2.0
-
-                        elif int(config['PARAMS']['decay']) == 2:
-
-                            power = float(node['lambda'])
-
-                        else:
-
-                            power = 1
-                        
-                        activeNodes_records.append((node['nodeID'], sim_round, power))
+                        activeNodes_records.append((node['nodeID'], sim_round, 1))
                         infNodes_records.append((node['nodeID'],))
 
                 else:

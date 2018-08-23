@@ -130,13 +130,18 @@ def incentivize(settings_config, results_config, conn):
 
     rows = conn.execute('SELECT nodeID, threshold FROM nodes').fetchall()
 
-    budget = int(settings_config['PARAMS']['budget'])
+    number_of_nodes = conn.execute('SELECT count(*) FROM nodes').fetchone()[0]
+
+    budget = int(float(settings_config['PARAMS']['budget'])*number_of_nodes)
+
+    print(budget)
+    results_config['RESULTS']['budget'] = str(budget)
 
     nodes_to_incentivize = list()
     active_nodes_records = list()
 
     with open("{}/target-set.csv".format(settings_config['FILES']['directory']), 'w') as target_file, open("{}/simulation-details.csv".format(settings_config['FILES']['directory']), "w") as details_file:
-        
+
         while budget > 0:
 
             node = choice(rows)
@@ -145,9 +150,20 @@ def incentivize(settings_config, results_config, conn):
 
             target_file.write('{}\n'.format(node['nodeID']))
 
-            new_threshold_value = int(math.floor(float(Decimal(node['threshold'])*(Decimal('1') - Decimal(settings_config['PARAMS']['incentive_prop'])))))
-            incentive_total = node['threshold'] - new_threshold_value
-            
+            if int(settings_config['PARAMS']['incentive_prop']):
+
+                new_threshold_value = node['threshold'] - int(settings_config['PARAMS']['incentive_prop'])
+
+                if new_threshold_value < 0:
+
+                    new_threshold_value = 0
+
+            else:
+
+                new_threshold_value = 0
+
+            incentive_total     = node['threshold'] - new_threshold_value
+
             if incentive_total > budget:
 
                 break
@@ -173,20 +189,14 @@ def incentivize(settings_config, results_config, conn):
 
         print('Finished updating NODES table with influenced nodes ' + str(round(time.time() - start_time, 2)))
 
-        if settings_config['PARAMS']['decay']:
+        active_nodes_records = [(node['nodeID'], 0, 1) for node in influenced_nodes]
 
-            active_nodes_records = [(node['nodeID'],0,node['neighbours']) for node in influenced_nodes]
-        
-        else:
-            
-            active_nodes_records = [(node['nodeID'], 0, 1) for node in influenced_nodes]
-        
         conn.executemany('INSERT INTO activeNodes VALUES (?, ?, ?)', active_nodes_records)
-        
+
         details_file.write('0,{},{}\n'.format(len(active_nodes_records), len(nodes_to_influence))) 
-        
+
         conn.commit()
-        
+
         print('Finished inserting active nodes for first round ' + str(round(time.time() - start_time, 2)))
 
 
