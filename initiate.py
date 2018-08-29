@@ -121,7 +121,7 @@ def lambda_value_degree(config, conn):
 def incentivize(settings_config, results_config, conn):
 
     from random import seed
-    from random import choice
+    from random import random
 
     start_time = time.time()
     print('Selecting Target Set')
@@ -139,16 +139,23 @@ def incentivize(settings_config, results_config, conn):
 
     nodes_to_incentivize = list()
     active_nodes_records = list()
+    index = 0
 
     with open("{}/target-set.csv".format(settings_config['FILES']['directory']), 'w') as target_file, open("{}/simulation-details.csv".format(settings_config['FILES']['directory']), "w") as details_file:
 
         while budget > 0:
 
-            node = choice(rows)
-            # node = conn.execute('''SELECT nodes.nodeID, nodes.threshold FROM nodes 
-            #                         WHERE nodes.rowid=?''',(row_to_incentivize,)).fetchone()
+            # Select random index from index to len(rows) - 1
+            random_index = int(random()*(number_of_nodes - index))
 
-            target_file.write('{}\n'.format(node['nodeID']))
+            # Swap with current index
+            temp_node           = rows[index]
+            rows[index]         = rows[random_index]
+            rows[random_index]  = temp_node
+
+            # Add the randomly selected node to the nodes to be incentivized and update budget
+
+            node = rows[index]
 
             if int(settings_config['PARAMS']['incentive_prop']):
 
@@ -162,20 +169,27 @@ def incentivize(settings_config, results_config, conn):
 
                 new_threshold_value = 0
 
-            incentive_total     = node['threshold'] - new_threshold_value
+            incentive_total = node['threshold'] - new_threshold_value
 
             if incentive_total > budget:
 
                 break
-                        
+
+            target_file.write('{}\n'.format(node['nodeID']))
+
             budget = budget - incentive_total
 
             nodes_to_incentivize.append((new_threshold_value,node['nodeID']))
-            rows.remove(node)
+
+            index = index + 1
+
+        print('Finished Selecting Randomly Nodes to Incentivize  {}'.format(round(time.time() - start_time, 2)))
 
         conn.executemany('UPDATE nodes SET threshold=? WHERE nodeID=?', nodes_to_incentivize)
 
         conn.commit()
+
+        print('Finished updating NODES table with influenced nodes {}'.format(round(time.time() - start_time, 2)))
 
         ####### Activate nodes which now have threshold 0
         influenced_nodes = conn.execute('''SELECT nodes.nodeID, count(edges.nodeID2) as neighbours FROM nodes
@@ -187,8 +201,6 @@ def incentivize(settings_config, results_config, conn):
 
         conn.executemany('''UPDATE nodes SET inf=1 WHERE nodeID=?''', nodes_to_influence)
 
-        print('Finished updating NODES table with influenced nodes ' + str(round(time.time() - start_time, 2)))
-
         active_nodes_records = [(node['nodeID'], 0, 1) for node in influenced_nodes]
 
         conn.executemany('INSERT INTO activeNodes VALUES (?, ?, ?)', active_nodes_records)
@@ -197,7 +209,7 @@ def incentivize(settings_config, results_config, conn):
 
         conn.commit()
 
-        print('Finished inserting active nodes for first round ' + str(round(time.time() - start_time, 2)))
+        print('Finished inserting active nodes for first round  {}'.format(round(time.time() - start_time, 2)))
 
 
 
