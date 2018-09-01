@@ -2,158 +2,152 @@ import sqlite3
 import numpy as np
 from itertools import combinations
 
-directory_name = '/Users/laurawilby/dev/experiments_data/new_14'
+directory_name = '/local-scratch/lw-data/aug29/enron/inc_0_1_budget_1_15'
+n_experiments = 32
+factors = ['thresh', 'inc', 'lambda', 'budget', 'decay']
 
 one = list()
-'''threshold'''
-one.append(np.repeat([1,-1],32))
+i = 2
 
-'''lambda_val'''
-pattern = [1]*16
-pattern.extend([-1]*16)
-one.append(np.tile(pattern,2))
+while (n_experiments/i > 1):
 
-'''selection size'''
-pattern = [1]*8
-pattern.extend([-1]*8)
-one.append(np.tile(pattern,4))
+    '''Terminates when i is equal to the number of experiments'''
 
-'''composition'''
-pattern = [1]*4
-pattern.extend([-1]*4)
-one.append(np.tile(pattern,8))
+    half_pattern_size = int(n_experiments/i)
+    pattern_repeats   = int(n_experiments/(half_pattern_size*2))
 
- '''incentive'''
- pattern = [1,1,-1,-1]
- one.append(np.tile(pattern,16))
+    pattern = [1]*half_pattern_size
+    pattern.extend([-1]*half_pattern_size)
 
-'''decay'''
-pattern = [1,-1]
-one.append(np.tile(pattern,32))
+    one.append(np.tile(pattern,pattern_repeats))
 
-columns = list(one)
+    i=i*2
 
-for (a,b) in combinations(one,2):
-    columns.append(a*b)
 
-for (a,b,c) in combinations(one,3):
-    columns.append(a*b*c)
+columns        = list(one)
+factor_vectors = list()
 
-for (a,b,c,d) in combinations(one,4):
-    columns.append(a*b*c*d)
+j = 2
 
-for (a,b,c,d,e) in combinations(one,5):
-    columns.append(a*b*c*d*e)
+while j <= len(one):
 
- for (a,b,c,d,e,f) in combinations(one,6):
-     columns.append(a*b*c*d*e*f)
+    '''Terminates when j is bigger then the number of factors'''
+    combinations_to_multiply = combinations(one,j)
+    factor_combinations = combinations(factors,j)
+
+    for column_combination in combinations_to_multiply:
+
+        new_column = np.ones(n_experiments)
+        for column in column_combination:
+
+            new_column*column
+
+        columns.append(new_column)
+
+    factor_vector = list()
+
+    for factor_combination in factor_combinations:
+
+        print(factor_combination)
+        for factor in factors:
+
+            if factor in factor_combination:
+
+                factor_vector.append(1)
+
+            else:
+
+                factor_vector.append(0)
+
+    factor_vectors.append(factor_vector)
+
+
+    j = j + 1
+
 
 # connect to results db and build y-s as seperate np array
 
 conn = sqlite3.connect(directory_name + '/results.db')
 conn.row_factory = sqlite3.Row
 
-results_query = conn.execute('''SELECT inf, rounds FROM results''')
+results_query = conn.execute('''SELECT inf, rounds, benchmark FROM results''')
 
 influence = list()
 rounds = list()
+benchmark = list()
 
 for result in results_query:
 
     influence.append(result['inf'])
     rounds.append(result['rounds'])
+    benchmark.append(result['benchmark'])
 
 
 influence_vector = np.array(influence)
 rounds_vector = np.array(rounds)
+benchmark_vector = np.array(benchmark)
 
-# print(influence_vector)
-# print(rounds_vector)
 
 # calculate dot products to get SST, SSA, ... etc. 
 
 Influence_qs = list()
 Rounds_qs = list()
+Benchmark_qs = list()
 
 for column in columns:
 
     dot_product_influence = np.vdot(column, influence_vector)
     dot_product_rounds = np.vdot(column, rounds_vector)
+    dot_product_benchmark = np.vdot(column, benchmark_vector)
     Influence_qs.append(dot_product_influence)
     Rounds_qs.append(dot_product_rounds)
+    Benchmark_qs.append(dot_product_benchmark)
 
-# print(Sum_of_Squares_Influence)
-# print(Sum_of_Squares_Rounds)
 
 # calculate percentages as SSA/SST etc.
 
 Influence_qs = np.array(Influence_qs)
 Rounds_qs = np.array(Rounds_qs)
+Benchmark_qs = np.array(Benchmark_qs)
 
-print(Influence_qs)
-print(Rounds_qs)
-
-Influence_qs = np.divide(Influence_qs, 32)
-Rounds_qs = np.divide(Rounds_qs, 32)
-
-print(Influence_qs)
-print(Rounds_qs)
-
+Influence_qs = np.divide(Influence_qs, n_experiments)
+Rounds_qs = np.divide(Rounds_qs, n_experiments)
+Benchmark_qs = np.divide(Benchmark_qs, n_experiments)
 
 Influence_qs = np.square(Influence_qs)
 Rounds_qs = np.square(Rounds_qs)
+Benchmark_qs = np.square(Benchmark_qs)
 
-print(Influence_qs)
-print(Rounds_qs)
-
-Influence_qs = np.multiply(32,Influence_qs)
-Rounds_qs = np.multiply(32, Rounds_qs)
+Influence_qs = np.multiply(n_experiments,Influence_qs)
+Rounds_qs = np.multiply(n_experiments, Rounds_qs)
+Benchmark_qs = np.multiply(n_experiments, Benchmark_qs)
 
 SST_Inf = np.sum(Influence_qs)
 SST_Rou = np.sum(Rounds_qs)
-
-print(SST_Inf)
-print(SST_Rou)
+SST_Ben = np.sum(Benchmark_qs)
 
 percentages_influence = list()
 percentages_rounds = list()
+percentages_benchmark = list()
 
-for inf, rou in zip(Influence_qs, Rounds_qs):
+for inf, rou, ben in zip(Influence_qs, Rounds_qs, Benchmark_qs):
 
     inf_percent = inf/SST_Inf
     round_percent = rou/SST_Rou
+    bench_percent = ben/SST_Ben
     percentages_influence.append(inf_percent)
     percentages_rounds.append(round_percent)
+    percentages_benchmark.append(bench_percent)
 
-labels = ['dataset', 'thresh', 'inc',  'lambda', 'budget']
-column_labels = list(labels)
 
-for (a,b) in combinations(labels,2):
-    column_labels.append('{} {}'.format(a,b))
+with open('{}/results.csv'.format(directory_name), 'w') as results_text:
 
-for (a,b,c) in combinations(labels,3):
-    column_labels.append('{} {} {}'.format(a,b,c))
+    header = 'percent_inf,rounds,benchmark,{}\n'.format(factors)
+    results_text.write(header)
 
-for (a,b,c,d) in combinations(labels,4):
-    column_labels.append('{} {} {} {}'.format(a,b,c,d))
+    for percent, rounds, bench, vector in zip(percentages_influence,percentages_rounds,percentages_benchmark,factor_vectors):
 
-for (a,b,c,d,e) in combinations(labels,5):
-    column_labels.append('{} {} {} {} {}'.format(a,b,c,d,e))
+        results_text.write('{},{},{},{}\n'.format(percent,rounds,bench,vector))
 
- for (a,b,c,d,e,f) in combinations(labels,6):
-     column_labels.append('{} {} {} {} {}'.format(a,b,c,d,e,f))
 
-with open('{}/results.txt'.format(directory_name), 'w') as results_text:
 
-    results_text.write('Percentage Influenced\n')
-    results_text.write('Variables : Effect\n')
-    for label, percent, inf in zip(column_labels,percentages_influence,influence):
-
-        results_text.write('{} : {}\n'.format(label, round(percent*100,2), inf))
-
-    results_text.write('Rounds\n')
-    results_text.write('Variables : Effect\n')
-
-    for label, percent, ro in zip(column_labels, percentages_rounds, rounds):
-
-        results_text.write('{} : {}\n'.format(label, round(percent*100,2), ro))

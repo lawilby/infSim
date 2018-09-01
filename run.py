@@ -7,7 +7,7 @@ from settings import make_settings_file
 from execute import execute_simulation
 from db import create_results_db
 
-parent_directory = '/local-scratch/lw-data/new_2'
+parent_directory = '/local-scratch/lw-data/aug29/youtube/inc_0_1_budget_15_25_decay_1'
 
 results_conn = sqlite3.connect('{}/results.db'.format(parent_directory))
 results_conn.row_factory = sqlite3.Row
@@ -16,11 +16,11 @@ create_results_db(results_conn)
 
 params = dict()
 
-threshold_levels      = [0.5,0]
-lambda_levels         = [5,0]
-incentive_levels      = [.5,1]
-decay                 = [0,1]
-budget_levels         = [50,100]
+threshold_levels      = [0.5,0.6]
+lambda_levels         = [2,3]
+incentive_levels      = [0,1]
+decay                 = [1]
+budget_levels         = [.15,.25]
 stan_youtube          = {
                          'name'     : 'stan_youtube',
                          'edges'    : '/local-scratch/lw-data/youtube.txt',
@@ -32,7 +32,26 @@ stan_enron            = {
                          'edges'    : '/local-scratch/lw-data/enron.txt',
                          'nodes'    : '/local-scratch/lw-data/enron.txt'
                         }
-datasets              = [stan_enron,stan_youtube]
+
+stan_astroph            = {
+                         'name'     : 'stan_astroph',
+                         'edges'    : '/local-scratch/lw-data/astroph.txt',
+                         'nodes'    : '/local-scratch/lw-data/astroph.txt'
+                        }
+
+stan_epinions            = {
+                         'name'     : 'stan_epinions',
+                         'edges'    : '/local-scratch/lw-data/epinions.txt',
+                         'nodes'    : '/local-scratch/lw-data/epinions.txt'
+                        }
+
+stan_amazon            = {
+                         'name'     : 'stan_amazon',
+                         'edges'    : '/local-scratch/lw-data/amazon.txt',
+                         'nodes'    : '/local-scratch/lw-data/amazon.txt'
+                        }
+
+datasets              = [stan_youtube]
 
 experiment = 1
 
@@ -66,6 +85,7 @@ for dataset in datasets:
                             os.mkdir(directory_name)
                         except:
                             pass
+                        print(parent_directory)
                         make_settings_file(directory_name, parent_directory, params)
                         execute_simulation(directory_name, results_conn)
                         experiment += 1
