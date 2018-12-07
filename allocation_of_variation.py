@@ -2,14 +2,14 @@ import sqlite3
 import numpy as np
 from itertools import combinations
 
-directory_name = '/local-scratch/lw-data/aug29/enron/inc_0_1_budget_1_15'
-n_experiments = 32
-factors = ['thresh', 'inc', 'lambda', 'budget', 'decay']
+directory_name = '/Users/laurawilby/dev/experiments_data/November/YouTube/difficulty'
+n_experiments = 16
+factors = ['thresh', 'inc', 'lambda', 'budget']
 
 one = list()
 i = 2
 
-while (n_experiments/i > 1):
+while (n_experiments/i >= 1):
 
     '''Terminates when i is equal to the number of experiments'''
 
@@ -23,9 +23,8 @@ while (n_experiments/i > 1):
 
     i=i*2
 
-
 columns        = list(one)
-factor_vectors = list()
+factor_vectors = list([[1,0,0,0],[0,1,0,0],[0,0,1,0],[0,0,0,1]])
 
 j = 2
 
@@ -40,15 +39,14 @@ while j <= len(one):
         new_column = np.ones(n_experiments)
         for column in column_combination:
 
-            new_column*column
+            new_column = new_column*column
 
         columns.append(new_column)
 
-    factor_vector = list()
 
     for factor_combination in factor_combinations:
 
-        print(factor_combination)
+        factor_vector = list()
         for factor in factors:
 
             if factor in factor_combination:
@@ -59,95 +57,106 @@ while j <= len(one):
 
                 factor_vector.append(0)
 
-    factor_vectors.append(factor_vector)
-
+        factor_vectors.append(factor_vector)
 
     j = j + 1
 
 
-# connect to results db and build y-s as seperate np array
-
 conn = sqlite3.connect(directory_name + '/results.db')
 conn.row_factory = sqlite3.Row
 
-results_query = conn.execute('''SELECT inf, rounds, benchmark FROM results''')
+results_columns = ['Percentage Inf','Rounds']
 
-influence = list()
-rounds = list()
-benchmark = list()
+results_query = conn.execute('''SELECT rowid, inf, rounds FROM results''')
+
+
+results_lists = list()
 
 for result in results_query:
 
-    influence.append(result['inf'])
-    rounds.append(result['rounds'])
-    benchmark.append(result['benchmark'])
+    benchmarks = conn.execute('''SELECT benchmark, benchmark_val FROM benchmark WHERE results_id=?''', (result['rowid'],))
+
+    row = list()
+
+    row.append(result['inf'])
+    row.append(result['rounds'])
+        
+    for benchmark in benchmarks:
+
+        row.append(benchmark['benchmark_val'])
+        col_name = '{} Benchmark'.format(benchmark['benchmark'])
+
+        if not col_name in results_columns:
+
+            results_columns.append(col_name)
+    
+    results_lists.append(row)
+
+results_matrix = np.array(results_lists)
 
 
-influence_vector = np.array(influence)
-rounds_vector = np.array(rounds)
-benchmark_vector = np.array(benchmark)
-
-
-# calculate dot products to get SST, SSA, ... etc. 
-
-Influence_qs = list()
-Rounds_qs = list()
-Benchmark_qs = list()
+qs = [list() for column in results_columns]
 
 for column in columns:
 
-    dot_product_influence = np.vdot(column, influence_vector)
-    dot_product_rounds = np.vdot(column, rounds_vector)
-    dot_product_benchmark = np.vdot(column, benchmark_vector)
-    Influence_qs.append(dot_product_influence)
-    Rounds_qs.append(dot_product_rounds)
-    Benchmark_qs.append(dot_product_benchmark)
+    dot_products = [np.vdot(column, vector) for vector in results_matrix.T]
+    
+    for i in range(len(dot_products)):
+
+        qs[i].append(dot_products[i])
 
 
-# calculate percentages as SSA/SST etc.
+qs = [np.array(q) for q in qs]
+qs = [np.divide(q, n_experiments) for q in qs]
+qs = [np.square(q) for q in qs]
+qs = [np.multiply(n_experiments, q) for q in qs]
 
-Influence_qs = np.array(Influence_qs)
-Rounds_qs = np.array(Rounds_qs)
-Benchmark_qs = np.array(Benchmark_qs)
+totals = [np.sum(q) for q in qs]
 
-Influence_qs = np.divide(Influence_qs, n_experiments)
-Rounds_qs = np.divide(Rounds_qs, n_experiments)
-Benchmark_qs = np.divide(Benchmark_qs, n_experiments)
+percentages = [list() for column in results_columns]
 
-Influence_qs = np.square(Influence_qs)
-Rounds_qs = np.square(Rounds_qs)
-Benchmark_qs = np.square(Benchmark_qs)
+for q, count in zip(qs, range(len(qs))):
 
-Influence_qs = np.multiply(n_experiments,Influence_qs)
-Rounds_qs = np.multiply(n_experiments, Rounds_qs)
-Benchmark_qs = np.multiply(n_experiments, Benchmark_qs)
+    for num in q:
 
-SST_Inf = np.sum(Influence_qs)
-SST_Rou = np.sum(Rounds_qs)
-SST_Ben = np.sum(Benchmark_qs)
+        if totals[count] > 0:
+            percent = num/totals[count]
+        
+        else: 
+            percent = 0
 
-percentages_influence = list()
-percentages_rounds = list()
-percentages_benchmark = list()
-
-for inf, rou, ben in zip(Influence_qs, Rounds_qs, Benchmark_qs):
-
-    inf_percent = inf/SST_Inf
-    round_percent = rou/SST_Rou
-    bench_percent = ben/SST_Ben
-    percentages_influence.append(inf_percent)
-    percentages_rounds.append(round_percent)
-    percentages_benchmark.append(bench_percent)
+        percentages[count].append(percent)
 
 
 with open('{}/results.csv'.format(directory_name), 'w') as results_text:
 
-    header = 'percent_inf,rounds,benchmark,{}\n'.format(factors)
+    t = results_columns
+
+    h = ['{}'.format(i) for i in factors]
+
+    t.extend(h)    
+
+    header = ','.join(t)
+    
     results_text.write(header)
+    results_text.write('\n')
 
-    for percent, rounds, bench, vector in zip(percentages_influence,percentages_rounds,percentages_benchmark,factor_vectors):
 
-        results_text.write('{},{},{},{}\n'.format(percent,rounds,bench,vector))
+    for row_index in range(len(percentages[0])):
+
+        r = list()
+        for column_index in range(len(percentages)):
+
+            r.append('{}'.format(round(percentages[column_index][row_index]*100,2)))
+        
+        v = ['{}'.format(i) for i in factor_vectors[row_index]]
+
+        r.extend(v)
+
+        line = ','.join(r)
+
+        results_text.write(line)
+        results_text.write('\n')
 
 
 

@@ -8,6 +8,7 @@ from settings import make_settings_file
 from db import create_db
 from parse import parse_asu_data
 from parse import parse_stanford_data
+from parse import parse_airline_data
 from initiate import thresholds_proportion
 from initiate import thresholds_random
 from initiate import lambda_value_degree
@@ -32,7 +33,13 @@ def execute_simulation(directory_name, results_db):
 
     create_db(conn) 
 
-    parse_stanford_data(settings_config, conn)
+    if settings_config['FILES']['dataset'] == 'flights':
+
+        parse_airline_data(settings_config, conn)
+
+    else:
+
+        parse_stanford_data(settings_config, conn)
 
     if settings_config['PARAMS']['thresh_prop'] == '0':
 

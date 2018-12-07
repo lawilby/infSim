@@ -40,3 +40,12 @@ def create_results_db(conn):
                  seed INTEGER,
                  rounds INTEGER,
                  inf REAL)''')
+
+def add_benchmark_columns(conn):
+   
+    conn.execute('''CREATE TABLE IF NOT EXISTS benchmark (
+                        results_id INTEGER,
+                        benchmark REAL, 
+                        benchmark_val REAL)''')
+
+    conn.commit()

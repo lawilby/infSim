@@ -1,7 +1,7 @@
 import matplotlib.pyplot as plt
 import configparser
 
-directory_name = '/Users/laurawilby/dev/experiments_data/new_9'
+directory_name = '/Users/laurawilby/dev/experiments_data/aug29/youtube/inc_0_1_budget_1_15_decay_1'
 
 for i in range(1,65):
 
@@ -24,8 +24,6 @@ for i in range(1,65):
             cumulative_value = cumulative_value + 100*float(data[2].strip())/float(total_nodes)
             y.append(cumulative_value)
         
-        print(x)
-        print(y)
 
         plt.plot(x, y, '.')
         plt.xlabel('Round')
